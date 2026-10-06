@@ -316,6 +316,38 @@ describe("SupabaseProfileStore", () => {
     spy.mockRestore();
   });
 
+  it("confirms a single item scoped to the row and the user", async () => {
+    const { client, calls } = fakeSupabase({ data: [{ id: "i1" }] });
+    expect(await new SupabaseProfileStore(client).confirmItem("user-1", "skills", "i1")).toBe(true);
+    const ops = calls[0]!.ops;
+    expect(ops).toContainEqual(["update", [{ confirmed: true }]]);
+    expect(ops).toContainEqual(["eq", ["id", "i1"]]);
+    expect(ops).toContainEqual(["eq", ["user_id", "user-1"]]);
+
+    const none = fakeSupabase({ data: [] });
+    expect(await new SupabaseProfileStore(none.client).confirmItem("user-1", "skills", "x")).toBe(
+      false,
+    );
+  });
+
+  it("confirms all pending items across every collection, only for this user", async () => {
+    const { client, calls } = fakeSupabase({ data: [{ id: "a" }, { id: "b" }] });
+    const changed = await new SupabaseProfileStore(client).confirmAll("user-1");
+    expect(calls.map((c) => c.table)).toEqual([
+      "education",
+      "experiences",
+      "projects",
+      "certifications",
+      "skills",
+      "achievements",
+    ]);
+    expect(changed).toBe(12); // two rows reported per table in this fake
+    for (const call of calls) {
+      expect(call.ops).toContainEqual(["eq", ["user_id", "user-1"]]);
+      expect(call.ops).toContainEqual(["eq", ["confirmed", false]]);
+    }
+  });
+
   it("returns the deleted flag false when nothing matched", async () => {
     const { client } = fakeSupabase({ data: [] });
     expect(await new SupabaseProfileStore(client).deleteItem("u", "skills", "missing")).toBe(false);

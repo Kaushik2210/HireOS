@@ -8,7 +8,12 @@ import {
   type SingletonDataMap,
   type SingletonRecord,
 } from "@/db/profile/store";
-import type { CollectionEntity, CollectionItem, SingletonEntity } from "@/lib/profile/schemas";
+import {
+  COLLECTION_ENTITIES,
+  type CollectionEntity,
+  type CollectionItem,
+  type SingletonEntity,
+} from "@/lib/profile/schemas";
 
 type Row = Record<string, unknown>;
 
@@ -137,6 +142,32 @@ export class SupabaseProfileStore implements ProfileStore {
     if (error) fail(error);
     if (!updated) throw new StoreError("not_found");
     return fromDbRow(entity, updated as Row) as unknown as CollectionItem<E>;
+  }
+
+  async confirmItem(userId: string, entity: CollectionEntity, id: string): Promise<boolean> {
+    const { data, error } = await this.client
+      .from(entity)
+      .update({ confirmed: true })
+      .eq("id", id)
+      .eq("user_id", userId)
+      .select("id");
+    if (error) fail(error);
+    return (data?.length ?? 0) > 0;
+  }
+
+  async confirmAll(userId: string): Promise<number> {
+    let changed = 0;
+    for (const entity of COLLECTION_ENTITIES) {
+      const { data, error } = await this.client
+        .from(entity)
+        .update({ confirmed: true })
+        .eq("user_id", userId)
+        .eq("confirmed", false)
+        .select("id");
+      if (error) fail(error);
+      changed += data?.length ?? 0;
+    }
+    return changed;
   }
 
   async deleteItem(userId: string, entity: CollectionEntity, id: string): Promise<boolean> {

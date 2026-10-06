@@ -69,6 +69,10 @@ export interface ProfileStore {
   ): Promise<CollectionItem<E>>;
   /** Returns false when nothing was deleted. */
   deleteItem(userId: string, entity: CollectionEntity, id: string): Promise<boolean>;
+  /** Marks one item as confirmed (verified). Returns false when it does not exist. */
+  confirmItem(userId: string, entity: CollectionEntity, id: string): Promise<boolean>;
+  /** Confirms every pending item and returns how many changed. */
+  confirmAll(userId: string): Promise<number>;
 }
 
 /** Extra operations available only in demo mode, where data is a disposable sandbox. */

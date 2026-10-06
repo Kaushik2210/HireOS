@@ -173,6 +173,32 @@ export class MemoryProfileStore implements DemoProfileStore {
     return true;
   }
 
+  async confirmItem(userId: string, entity: CollectionEntity, id: string): Promise<boolean> {
+    const list = this.state(userId).collections[entity] as CollectionItem<CollectionEntity>[];
+    const item = list.find((i) => i.id === id);
+    if (!item) return false;
+    if (!item.confirmed) {
+      item.confirmed = true;
+      item.updated_at = now();
+    }
+    return true;
+  }
+
+  async confirmAll(userId: string): Promise<number> {
+    let changed = 0;
+    const collections = this.state(userId).collections;
+    for (const entity of COLLECTION_ENTITIES) {
+      for (const item of collections[entity] as CollectionItem<CollectionEntity>[]) {
+        if (!item.confirmed) {
+          item.confirmed = true;
+          item.updated_at = now();
+          changed += 1;
+        }
+      }
+    }
+    return changed;
+  }
+
   async loadPersona(userId: string, personaId: string): Promise<void> {
     this.seed(this.state(userId), personaId);
   }
