@@ -1,6 +1,6 @@
 # HireOS Database Design
 
-PostgreSQL via Supabase. Versioned SQL migrations in `db/migrations`, applied in order, idempotent on a fresh DB. Seed script in `db/seed`.
+PostgreSQL via Supabase. Versioned SQL migrations in `supabase/migrations` (the Supabase CLI convention), applied in filename order on a fresh DB. Typed queries and the seed script live in `/db`.
 
 ## Conventions
 - `id uuid primary key default gen_random_uuid()`; `created_at`, `updated_at` (trigger-maintained) on every table.
@@ -59,3 +59,16 @@ Private bucket `resumes`, path `{user_id}/{resume_id}`; storage policies mirror 
 
 ## Data controls
 Export (JSON of all user rows), delete resume/profile/applications, delete account (cascade + storage purge). Demo wipe deletes `is_demo` rows for the user.
+
+## Implemented so far
+| Migration | Contents |
+|---|---|
+| `..01_helpers` | `set_updated_at()` trigger function |
+| `..02_users` | `users` (settings, onboarding state; email stays in Supabase Auth), RLS (own row), column-level update grants, `handle_new_user` trigger on `auth.users` |
+| `..03_audit_logs` | `audit_logs`, RLS (read own), service-role-only writes, append-only trigger (only the account-deletion detach is allowed) |
+
+Grants are explicit and least-privilege (`revoke all` from `anon`/`authenticated`, then grant what is needed), so correctness does not depend on Supabase default privileges.
+
+## Verifying migrations and RLS
+`tests/db` applies every migration to a brand-new in-process Postgres (PGlite, real Postgres compiled to WASM) behind a small `auth` shim (`tests/db/auth-shim.sql`: `auth.users`, `auth.uid()`, and the `anon`/`authenticated`/`service_role` roles). Tests act as each role and user, and a generic test fails if any table in `public` lacks RLS. This runs in `npm test` with no Docker.
+Limits: it is not a Supabase stack. GoTrue, PostgREST, storage policies and extensions such as pgvector are not exercised. A real-stack check (`supabase db reset` plus the same assertions) is planned for CI once a Supabase project exists.
