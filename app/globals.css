@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Dark-first command-center palette: cool near-black surfaces,
+ * hairline borders, one restrained cyan accent. Strength colors are reserved
+ * for Application Strength labels so they keep their meaning.
+ */
+:root {
+  color-scheme: dark;
+
+  --background: #090b10;
+  --surface: #0f1219;
+  --surface-raised: #151a24;
+  --surface-hover: #1b2230;
+  --border: #232b3a;
+  --border-strong: #2f3a4e;
+
+  --foreground: #e6e9ef;
+  --muted: #8b95a8;
+  --subtle: #5d677a;
+
+  --accent: #4cc9f0;
+  --accent-foreground: #04131a;
+  --accent-soft: rgb(76 201 240 / 0.12);
+
+  --strength-strong: #34d399;
+  --strength-good: #4cc9f0;
+  --strength-stretch: #fbbf24;
+  --strength-low: #f87171;
+
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --success: #34d399;
+
+  --radius: 0.5rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-strength-strong: var(--strength-strong);
+  --color-strength-good: var(--strength-good);
+  --color-strength-stretch: var(--strength-stretch);
+  --color-strength-low: var(--strength-low);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+}
+
+html {
+  background: var(--background);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  border-color: var(--border);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Restrained glass: used for the palette and overlays only. */
+.glass {
+  background: rgb(15 18 25 / 0.8);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
