@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { DEMO_COOKIE, isValidDemoId } from "@/lib/auth/demo";
 import { classifyPath, hasAuthCookie } from "@/lib/auth/route-access";
 import { getServerEnv } from "@/lib/env";
 
@@ -11,8 +12,21 @@ import { getServerEnv } from "@/lib/env";
 export async function proxy(request: NextRequest) {
   const { NEXT_PUBLIC_SUPABASE_URL: url, NEXT_PUBLIC_SUPABASE_ANON_KEY: key } = getServerEnv();
 
-  // Demo mode: no auth backend configured, nothing to enforce.
-  if (!url || !key) return NextResponse.next();
+  // Demo mode: no auth backend, nothing to enforce. Give each visitor an isolated sandbox id.
+  if (!url || !key) {
+    if (isValidDemoId(request.cookies.get(DEMO_COOKIE)?.value)) return NextResponse.next();
+    const id = crypto.randomUUID();
+    request.cookies.set(DEMO_COOKIE, id); // visible to this same request's render
+    const demo = NextResponse.next({ request });
+    demo.cookies.set(DEMO_COOKIE, id, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    });
+    return demo;
+  }
 
   let response = NextResponse.next({ request });
 

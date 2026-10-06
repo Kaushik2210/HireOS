@@ -3,17 +3,21 @@
 import Link from "next/link";
 import { signUpAction } from "@/features/auth/actions";
 import { AuthCard } from "@/features/auth/components/auth-card";
-import { useAuthForm } from "@/features/auth/components/use-auth-form";
+import { useActionForm } from "@/hooks/use-action-form";
 import { Button } from "@/components/ui/button";
 import { FormField, FormMessage, Input } from "@/components/ui/form-field";
 import { PASSWORD_MIN, signUpSchema } from "@/lib/auth/schemas";
 
 export function SignUpForm() {
-  const { form, onSubmit, pending, formError, success } = useAuthForm(signUpSchema, signUpAction, {
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+  const { form, onSubmit, pending, formError, success } = useActionForm(
+    signUpSchema,
+    signUpAction,
+    {
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  );
   const { register, formState } = form;
 
   return (

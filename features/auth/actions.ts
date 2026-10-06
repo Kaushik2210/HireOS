@@ -9,13 +9,13 @@ import {
   signUpByIp,
 } from "@/features/auth/limiters";
 import { getAppUrl, getClientIp } from "@/features/auth/request-context";
+import { invalidResult, type ActionResult } from "@/lib/action-result";
 import { safeRedirectPath } from "@/lib/auth/redirect";
 import {
   forgotPasswordSchema,
   resetPasswordSchema,
   signInSchema,
   signUpSchema,
-  type ActionResult,
 } from "@/lib/auth/schemas";
 import { requireUser } from "@/lib/auth/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -45,19 +45,9 @@ function isBackendFailure(error: { name?: string; status?: number } | null): boo
 const WEAK_PASSWORD =
   "That password is too weak or has appeared in a known data breach. Try another.";
 
-function invalid(error: {
-  flatten: () => { fieldErrors: Record<string, string[] | undefined> };
-}): ActionResult {
-  const fieldErrors: Record<string, string[]> = {};
-  for (const [key, messages] of Object.entries(error.flatten().fieldErrors)) {
-    if (messages) fieldErrors[key] = messages;
-  }
-  return { ok: false, error: "Please fix the highlighted fields.", fieldErrors };
-}
-
 export async function signInAction(input: unknown, next?: string): Promise<ActionResult> {
   const parsed = signInSchema.safeParse(input);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidResult(parsed.error);
 
   const supabase = await createSupabaseServerClient();
   if (!supabase) return NOT_CONFIGURED;
@@ -82,7 +72,7 @@ export async function signInAction(input: unknown, next?: string): Promise<Actio
 
 export async function signUpAction(input: unknown): Promise<ActionResult> {
   const parsed = signUpSchema.safeParse(input);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidResult(parsed.error);
 
   const supabase = await createSupabaseServerClient();
   if (!supabase) return NOT_CONFIGURED;
@@ -124,7 +114,7 @@ export async function signOutAction(): Promise<void> {
 
 export async function requestPasswordResetAction(input: unknown): Promise<ActionResult> {
   const parsed = forgotPasswordSchema.safeParse(input);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidResult(parsed.error);
 
   const supabase = await createSupabaseServerClient();
   if (!supabase) return NOT_CONFIGURED;
@@ -147,7 +137,7 @@ export async function requestPasswordResetAction(input: unknown): Promise<Action
 
 export async function updatePasswordAction(input: unknown): Promise<ActionResult> {
   const parsed = resetPasswordSchema.safeParse(input);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidResult(parsed.error);
 
   const supabase = await createSupabaseServerClient();
   if (!supabase) return NOT_CONFIGURED;

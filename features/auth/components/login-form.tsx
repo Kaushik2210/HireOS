@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { signInAction } from "@/features/auth/actions";
 import { AuthCard } from "@/features/auth/components/auth-card";
-import { useAuthForm } from "@/features/auth/components/use-auth-form";
+import { useActionForm } from "@/hooks/use-action-form";
 import { Button } from "@/components/ui/button";
 import { FormField, FormMessage, Input } from "@/components/ui/form-field";
 import { signInSchema } from "@/lib/auth/schemas";
@@ -14,7 +14,7 @@ const NOTICES: Record<string, string> = {
 };
 
 export function LoginForm({ next, notice }: { next?: string; notice?: string }) {
-  const { form, onSubmit, pending, formError } = useAuthForm(
+  const { form, onSubmit, pending, formError } = useActionForm(
     signInSchema,
     (values) => signInAction(values, next),
     { email: "", password: "" },

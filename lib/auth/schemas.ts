@@ -48,8 +48,3 @@ export type SignInInput = z.infer<typeof signInSchema>;
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
-
-/** Result shape returned by every auth server action. Redirects never return. */
-export type ActionResult =
-  | { ok: true; message?: string }
-  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };

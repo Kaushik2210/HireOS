@@ -4,16 +4,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useTransition } from "react";
 import { useForm, type DefaultValues, type FieldValues, type Path } from "react-hook-form";
 import type { z } from "zod";
-import type { ActionResult } from "@/lib/auth/schemas";
+import type { ActionResult } from "@/lib/action-result";
 
 /**
- * Shared wiring for the auth forms: client-side Zod validation for instant feedback,
+ * Shared wiring for forms: client-side Zod validation for instant feedback,
  * then a server action that validates again (the client is never trusted).
  */
-export function useAuthForm<TIn extends FieldValues, TOut extends FieldValues>(
+export function useActionForm<TIn extends FieldValues, TOut extends FieldValues>(
   schema: z.ZodType<TOut, TIn>,
   submit: (values: TOut) => Promise<ActionResult | void>,
   defaultValues: TIn,
+  onSuccess?: () => void,
 ) {
   const form = useForm<TIn, unknown, TOut>({
     resolver: zodResolver(schema),
@@ -32,6 +33,7 @@ export function useAuthForm<TIn extends FieldValues, TOut extends FieldValues>(
       if (!result) return;
       if (result.ok) {
         setSuccess(result.message ?? "Done.");
+        onSuccess?.();
         return;
       }
       setFormError(result.error);

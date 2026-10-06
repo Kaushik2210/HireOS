@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { requestPasswordResetAction } from "@/features/auth/actions";
 import { AuthCard } from "@/features/auth/components/auth-card";
-import { useAuthForm } from "@/features/auth/components/use-auth-form";
+import { useActionForm } from "@/hooks/use-action-form";
 import { Button } from "@/components/ui/button";
 import { FormField, FormMessage, Input } from "@/components/ui/form-field";
 import { forgotPasswordSchema } from "@/lib/auth/schemas";
 
 export function ForgotPasswordForm() {
-  const { form, onSubmit, pending, formError, success } = useAuthForm(
+  const { form, onSubmit, pending, formError, success } = useActionForm(
     forgotPasswordSchema,
     requestPasswordResetAction,
     { email: "" },
