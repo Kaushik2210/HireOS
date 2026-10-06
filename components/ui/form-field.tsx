@@ -18,6 +18,41 @@ export const Input = React.forwardRef<
 ));
 Input.displayName = "Input";
 
+export const Textarea = React.forwardRef<
+  HTMLTextAreaElement,
+  React.TextareaHTMLAttributes<HTMLTextAreaElement>
+>(({ className, rows = 3, ...props }, ref) => (
+  <textarea
+    ref={ref}
+    rows={rows}
+    className={cn(
+      "border-border-strong bg-background placeholder:text-subtle w-full resize-y rounded-md border px-3 py-2 text-sm transition-colors",
+      "focus-visible:border-accent aria-[invalid=true]:border-danger disabled:opacity-50",
+      className,
+    )}
+    {...props}
+  />
+));
+Textarea.displayName = "Textarea";
+
+export const Select = React.forwardRef<
+  HTMLSelectElement,
+  React.SelectHTMLAttributes<HTMLSelectElement>
+>(({ className, children, ...props }, ref) => (
+  <select
+    ref={ref}
+    className={cn(
+      "border-border-strong bg-background h-9 w-full rounded-md border px-2 text-sm transition-colors",
+      "focus-visible:border-accent aria-[invalid=true]:border-danger disabled:opacity-50",
+      className,
+    )}
+    {...props}
+  >
+    {children}
+  </select>
+));
+Select.displayName = "Select";
+
 interface FormFieldProps {
   id: string;
   label: string;

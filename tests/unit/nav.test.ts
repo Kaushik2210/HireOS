@@ -8,9 +8,9 @@ describe("navigation registry", () => {
     expect(new Set(NAV_ITEMS.map((i) => i.href)).size).toBe(NAV_ITEMS.length);
   });
 
-  it("only marks dashboard as live in phase 1", () => {
+  it("only marks the built features as live", () => {
     const live = NAV_ITEMS.filter((i) => i.status === "live").map((i) => i.id);
-    expect(live).toEqual(["dashboard"]);
+    expect(live).toEqual(["dashboard", "profile"]);
   });
 
   it("never marks a palette action live without a destination", () => {

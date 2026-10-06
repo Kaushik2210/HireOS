@@ -2,7 +2,12 @@ import { Activity, BarChart3, Briefcase, Lightbulb, ListChecks } from "lucide-re
 import type { Metadata } from "next";
 import { EmptyState } from "@/components/states/empty-state";
 import { Badge, PlannedBadge } from "@/components/ui/badge";
+import Link from "next/link";
+import { getProfileStore } from "@/db/profile";
+import { CompletenessCard } from "@/features/profile/components/completeness-card";
+import { requireUser } from "@/lib/auth/session";
 import { getCapabilities } from "@/lib/env";
+import { computeCompleteness, type Completeness } from "@/services/profile/completeness";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -61,8 +66,17 @@ function StatusRow({
   );
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
   const caps = getCapabilities();
+  const user = await requireUser();
+
+  let completeness: Completeness | null = null;
+  try {
+    const snapshot = await (await getProfileStore(user)).getSnapshot(user.id);
+    completeness = computeCompleteness(snapshot);
+  } catch {
+    completeness = null; // shown as an inline error below; the rest of the page still works
+  }
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
@@ -72,6 +86,30 @@ export default function DashboardPage() {
           Your career command center. Modules appear here as they are built.
         </p>
       </div>
+
+      <section
+        aria-labelledby="completeness"
+        className="border-border bg-surface rounded-lg border p-4"
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 id="completeness" className="text-sm font-medium">
+            Profile completeness
+          </h2>
+          <div className="flex items-center gap-2">
+            {user.isDemo && <Badge variant="accent">Demo data</Badge>}
+            <Link href="/profile" className="text-accent text-xs hover:underline">
+              Open profile
+            </Link>
+          </div>
+        </div>
+        {completeness ? (
+          <CompletenessCard completeness={completeness} />
+        ) : (
+          <p role="alert" className="text-danger text-sm">
+            Could not load your profile right now. Reload to try again.
+          </p>
+        )}
+      </section>
 
       <section
         aria-labelledby="system-status"

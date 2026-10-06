@@ -40,7 +40,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Career Profile",
     href: "/profile",
     icon: UserRound,
-    status: "planned",
+    status: "live",
     phase: 3,
   },
   { id: "resume", label: "Resume", href: "/resume", icon: FileText, status: "planned", phase: 4 },
