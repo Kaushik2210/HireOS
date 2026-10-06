@@ -68,6 +68,8 @@ Export (JSON of all user rows), delete resume/profile/applications, delete accou
 | `..03_audit_logs` | `audit_logs`, RLS (read own), service-role-only writes, append-only trigger (only the account-deletion detach is allowed) |
 | `..04_profile_and_goals` | `profiles`, `career_goals` (one row per user; preferences, salary, goals) |
 | `..05_profile_collections` | `education`, `experiences`, `projects`, `certifications`, `skills`, `achievements`; every row has `source` (`manual`/`resume`) and `confirmed` |
+| `..06_resumes` | `resumes`: file metadata, SHA-256, extracted text, `parsed` and `health` JSON; immutable; `storage_path` constrained to `{user_id}/{id}.ext` |
+| `..07_resume_storage` | Private `resumes` bucket (4 MB, PDF/DOCX only) and `storage.objects` policies: own folder only, exact `{uuid}/{uuid}.pdf|docx` names, no update |
 
 Grants are explicit and least-privilege (`revoke all` from `anon`/`authenticated`, then grant what is needed), so correctness does not depend on Supabase default privileges.
 
@@ -83,3 +85,10 @@ Limits: it is not a Supabase stack. GoTrue, PostgREST, storage policies and exte
 - Dates are `date` columns holding the first of the month; the app exchanges `YYYY-MM`.
 - The skills catalog (canonical names, categories, aliases) lives in code at `lib/skills/catalog.ts`, not in a table, so normalization is versioned with the code and works with no database. This replaces the `skill_catalog` table sketched earlier.
 - Soft delete is not used for profile items: deleting means deleting, which is what the user data controls promise.
+
+## Resumes (Phase 4)
+- `resumes` rows are immutable (no update policy or grant): re-analysis creates a new row. Users can read and delete their own; deleting also removes the stored file.
+- A CHECK constraint ties `storage_path` to `{user_id}/{id}.{ext}` matching the content type, so a row can never point at another user's object or a traversal path.
+- `UNIQUE (user_id, sha256)` recognises a re-upload of the same file for one user without blocking two users who happen to upload identical files.
+- `parsed` holds the parser output (already valid profile items, re-validated with Zod on read) and `health` the scored breakdown. `parser_version` allows re-parsing later.
+- Storage policies are tested on the PGlite shim, which now includes a minimal `storage` schema (`buckets`, `objects` with RLS, `foldername()`).

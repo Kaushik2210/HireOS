@@ -82,3 +82,28 @@ test("the profile page is protected", async ({ page }) => {
   await page.goto("/profile");
   await expect(page).toHaveURL(/\/login\?next=%2Fprofile$/);
 });
+
+test("the upload API answers signed-out callers with a JSON 401, not a redirect", async ({
+  request,
+  baseURL,
+}) => {
+  const res = await request.post("/api/resumes", {
+    headers: { origin: baseURL! },
+    multipart: {
+      file: { name: "a.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") },
+    },
+    maxRedirects: 0,
+  });
+  expect(res.status()).toBe(401);
+  expect(await res.json()).toMatchObject({ code: "auth" });
+
+  const download = await request.get("/api/resumes/11111111-1111-4111-8111-111111111111/file", {
+    maxRedirects: 0,
+  });
+  expect(download.status()).toBe(401);
+});
+
+test("the resume pages are protected", async ({ page }) => {
+  await page.goto("/resume");
+  await expect(page).toHaveURL(/\/login\?next=%2Fresume$/);
+});

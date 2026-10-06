@@ -7,7 +7,7 @@ Priority key: **Must** (MVP), **Should**, **Could**. Status is updated at each p
 | 1 | Project foundation (tooling, lint, test setup, CI, design tokens, layout shell) | Must | Done |
 | 2 | Authentication (Supabase Auth, protected routes, session expiry) | Must | Done (live round-trip unverified, see known issues) |
 | 3 | Candidate profile (profile, skills, projects, certs, experience, preferences) | Must | Done (Supabase path unverified live) |
-| 4 | Resume upload and parser (secure upload, extraction, Resume Health) | Must | Planned |
+| 4 | Resume upload and parser (secure upload, extraction, Resume Health) | Must | Done (Supabase storage path unverified live; LLM-assisted parsing Planned) |
 | 5 | Job database and providers (JobProvider, demo provider, dedupe, demo dataset) | Must | Planned |
 | 6 | Job matching (Application Strength, breakdown, Job Intelligence page) | Must | Planned |
 | 7 | Resume optimizer (tailoring, diff, versions, integrity verifier, cover letter) | Must | Planned |
@@ -42,3 +42,9 @@ Browser extension for user-initiated page capture, calendar integration for inte
 - Demo sandboxes live in server memory: they reset on restart and are not shared across serverless instances.
 - Profile items have no import path yet; resume parsing (Phase 4) will create unconfirmed items, and a confirm-all UI lands with it.
 - Month inputs use the browser's native control, whose appearance varies by browser.
+- The Supabase resume store and storage bucket are tested against a fake client (call shape, cleanup on failure) and, for the schema, constraints and storage policies, on PGlite. They have not run against a real Supabase project. Verify: upload, signed-URL download, delete (file and row), and cross-account isolation with two real accounts.
+- The resume parser is heuristic. It handles the common layouts well (classic, pipe-separated, wrapped lines) but will misread unusual ones, such as multi-column designs, graphics-heavy templates and non-English resumes. It flags uncertainty and drops what it cannot read; all imported items need user review. An LLM-assisted fallback is Planned for after the `LLMProvider` interface exists.
+- No OCR: image-only PDFs are reported as unreadable.
+- Resume Health scoring weights and thresholds are initial values and have not been calibrated against real resumes. Keyword coverage is general breadth only; job-specific coverage arrives with matching (Phase 6).
+- Resume files are parsed in the request process. Move to a background job or isolated worker with the Inngest work in a later phase if volume warrants.
+- Download is unavailable in demo mode because originals are discarded.

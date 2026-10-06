@@ -20,7 +20,7 @@ Each has a Zod input/output schema, prompt module, and tests: `resumeAnalyzer, j
 ## Division of labor: deterministic vs LLM
 | Task | Deterministic | LLM |
 |---|---|---|
-| Resume parse | Text extraction, section heuristics, skill normalization via catalog | Fallback structuring of messy sections (validated) |
+| Resume parse | Text extraction, section heuristics, skill normalization via catalog | Fallback structuring of messy sections (validated). **Not built yet: Planned** |
 | Job analysis | Dedupe, normalization | Extract requirements/skills/seniority into schema |
 | Matching | **All scoring** | Explanation text only |
 | Tailoring | Selection ranking, diff, verification | Phrasing proposals |
@@ -64,3 +64,7 @@ pgvector for semantic job search and retrieval of relevant profile items. Never 
 
 ## Observability
 Log task name, latency, token counts, validation outcome, scorer version. Never log resume or JD content.
+
+## Resume parsing status (Phase 4)
+The parser is fully deterministic and makes no model calls, so it works with no API key and is reproducible and testable. It prefers dropping or flagging an entry over guessing: skill levels are derived from evidence (listed only is `beginner`, used in a role or project is `intermediate`), years are never inferred, year-only dates are flagged, and ambiguous aliases such as "Go", "R" or "rest" are never matched in running prose.
+An LLM-assisted pass for messy layouts is deliberately deferred until the `LLMProvider` interface exists (first needed by job analysis). It will receive resume text only as delimited untrusted data, return Zod-validated structures, and be subject to the same integrity rule: it may propose items, never confirm them. The parser already treats resume text as data: injection-style text in a resume is carried verbatim and never acted on (tested).

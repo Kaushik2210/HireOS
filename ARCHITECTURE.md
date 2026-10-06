@@ -51,6 +51,18 @@ Dependency direction: `app -> features -> services -> (db, ai)`. `services` neve
 - The profile UI is configuration-driven: one generic form and dialog render every section from field definitions in `features/profile/config.ts`.
 - `services/profile/completeness.ts` scores completeness from verified items only. It is deterministic, shows the evidence for every criterion, and says it is not a hiring prediction.
 
+## Resume pipeline
+`POST /api/resumes` (a route handler, not a server action, so size limits and responses are explicit) runs `services/resume/upload.ts` in a fixed order. Nothing is stored unless every earlier step passes.
+1. Same-origin check, session check, per-user and per-address rate limits, `Content-Length` and file-size limits.
+2. `inspectUpload`: decides the file type from its bytes, never from the name or claimed MIME type, then checks for active content, encryption, macros and ZIP bombs.
+3. SHA-256 de-duplication and the per-user resume limit.
+4. Text extraction with hard budgets (pages, characters, time): `unpdf` for PDF, a bounded `fflate` + tokenizer reader for DOCX.
+5. Deterministic parse: normalize, detect sections, extract contact, skills, education, experience, projects, certifications and achievements; every item is validated against the real profile schemas and anything invalid is dropped and counted.
+6. Deterministic health scoring across six groups with the evidence behind every check.
+7. `ResumeStore.create` uploads the file to private storage, then writes the row, and removes the file if the row fails.
+
+Importing parsed items is a separate, explicit step: items enter the profile as `source = 'resume'`, `confirmed = false` and stay out of every verified view until the user confirms them.
+
 ## Cross-cutting
 - **Config**: typed env loader; the app boots with no keys (demo mode), features degrade to explicit "configure" states.
 - **Errors**: typed `Result`/error classes; no raw error text to clients; no PII in logs.

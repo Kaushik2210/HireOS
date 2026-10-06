@@ -42,6 +42,21 @@ Resumes are sensitive PII. Security is a feature, designed in from phase 1.
 - Profile text is rendered by React (escaped); it is treated as untrusted when it later reaches an LLM.
 - Demo sandboxes are isolated per visitor and cannot reach real accounts.
 
+## Implemented in Phase 4 (resume upload and parsing)
+Uploads are untrusted input and are treated as hostile until proven otherwise.
+- **Type by content.** The extension must agree with the magic bytes (`%PDF-` or ZIP). Executables, HTML and text renamed to `.pdf`/`.docx` are rejected. Legacy `.doc`/`.rtf`/`.odt` get guidance rather than a parse attempt.
+- **Active content.** PDFs with `/JavaScript`, `/JS`, `/Launch`, `/EmbeddedFile`, `/RichMedia` or `/XFA` are rejected. The scan skips binary stream bodies (to avoid false positives) and pdf.js then checks structurally for JS actions and attachments, which also catches dictionaries hidden in compressed object streams. Encrypted PDFs are rejected. pdf.js runs with `isEvalSupported: false`.
+- **DOCX.** Macro (`vbaProject.bin`), ActiveX and embedded-object parts are rejected. A central-directory check enforces entry-count, total-size, per-entry-size and compression-ratio limits before anything is inflated (decompression-bomb defense). Only `word/document.xml` and headers are ever inflated, with a size cap. Text is read by a tokenizer; no XML parser runs, so external entities are never resolved.
+- **Budgets.** 4 MB upload, 10 pages, 100,000 characters, 15 s per file, 15 resumes per user.
+- **Names and paths.** Display names are sanitised (directories, control characters and symbols stripped, length bounded) and are never used in a path. Storage paths are generated server-side as `{user_id}/{resume_id}.ext` and enforced by a CHECK constraint and by storage policy.
+- **Storage.** Private bucket with size and MIME limits; per-user folder policies; no update policy. Originals are never served from the app's origin: downloads redirect to a 60-second signed URL, so an uploaded document can never execute in the app's context.
+- **Endpoint hardening.** Same-origin check (Origin, falling back to Sec-Fetch-Site) because this is a cookie-authenticated route outside server actions; JSON 401 for signed-out API calls; `Cache-Control: no-store` and `nosniff`; per-user and per-address rate limits with `Retry-After`; generic error messages that never echo file contents or internals.
+- **Privacy.** In demo mode the original file is discarded after parsing and only the analysis is kept in server memory. Resume text and parse results are never logged. Extracted text is stored only in the user's own row.
+- **Integrity.** Parsed items are unconfirmed proposals; nothing from a resume is verified or usable in generated output until the user confirms it, and confirming requires an explicit second step for bulk confirmation.
+- **Tested** with real PDF and DOCX files and hostile variants (scripts, encryption, macros, embeddings, ZIP bombs, disguised executables, traversal-style names, injection text) in unit and end-to-end tests.
+
+Known limits: parsing runs in the request process (bounded, but a pathological file can still use CPU for up to the timeout; a worker or separate service is the next step); there is no antivirus scan; multipart bodies are buffered by the platform before the handler sees them, so Content-Length is checked first but a chunked body without one is bounded only by the platform limit; scanned or image-only PDFs are detected as unreadable, and there is no OCR.
+
 ## User data controls
 View, edit, export (JSON), delete resume/profile/applications, wipe demo data, delete account (cascade + storage purge).
 
