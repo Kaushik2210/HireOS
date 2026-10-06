@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3100;
+const DEMO = "http://localhost:3100";
+const AUTH = "http://localhost:3101";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -8,19 +9,30 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
-  use: {
-    baseURL: `http://localhost:${PORT}`,
-    trace: "retain-on-failure",
-  },
+  use: { trace: "retain-on-failure" },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobile", use: { ...devices["Pixel 7"] } },
+    {
+      name: "desktop",
+      testIgnore: /auth-enabled/,
+      use: { ...devices["Desktop Chrome"], baseURL: DEMO },
+    },
+    {
+      name: "mobile",
+      testIgnore: /auth-enabled/,
+      use: { ...devices["Pixel 7"], baseURL: DEMO },
+    },
+    {
+      name: "auth-enabled",
+      testMatch: /auth-enabled/,
+      use: { ...devices["Desktop Chrome"], baseURL: AUTH },
+    },
   ],
   webServer: {
-    // Production build: closer to what ships than the dev server.
-    command: `npm run build && npm run start -- --port ${PORT}`,
-    url: `http://localhost:${PORT}`,
+    // Production build, closer to what ships than the dev server.
+    command: "node scripts/e2e-servers.mjs",
+    url: DEMO,
     reuseExistingServer: !process.env.CI,
-    timeout: 240_000,
+    timeout: 300_000,
+    stdout: "pipe",
   },
 });
