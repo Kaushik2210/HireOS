@@ -85,6 +85,14 @@ describe("proxy", () => {
     expect((await proxy(request("/reset-password"))).status).toBe(200);
   });
 
+  it("answers signed-out API calls with a JSON 401 instead of a redirect", async () => {
+    signedOut();
+    const res = await proxy(request("/api/resumes"));
+    expect(res.status).toBe(401);
+    expect(res.headers.get("location")).toBeNull();
+    expect(await res.json()).toMatchObject({ code: "auth" });
+  });
+
   it("blocks reset-password for signed-out visitors", async () => {
     signedOut();
     const res = await proxy(request("/reset-password"));

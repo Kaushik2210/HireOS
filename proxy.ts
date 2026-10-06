@@ -54,6 +54,13 @@ export async function proxy(request: NextRequest) {
   };
 
   if (access === "protected" && !signedIn) {
+    // API clients expect a status code, not a redirect to an HTML page.
+    if (request.nextUrl.pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "Please sign in again.", code: "auth" },
+        { status: 401, headers: { "Cache-Control": "no-store" } },
+      );
+    }
     const login = new URL("/login", request.url);
     const { pathname, search } = request.nextUrl;
     if (pathname !== "/") login.searchParams.set("next", `${pathname}${search}`);
