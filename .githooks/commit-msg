@@ -1,0 +1,20 @@
+#!/bin/sh
+# Validates commit messages: subject length and banned terms.
+
+msg_file="$1"
+# Ignore git's comment lines
+msg=$(grep -v '^#' "$msg_file")
+subject=$(printf '%s\n' "$msg" | head -n 1)
+
+if [ ${#subject} -gt 72 ]; then
+  echo "commit-msg: subject line is ${#subject} chars (max 72)." >&2
+  exit 1
+fi
+
+banned='claude|anthropic|co-authored-by|generated with|ai-generated|ai generated|copilot|chatgpt|llm-written'
+if printf '%s\n' "$msg" | grep -Eiq "$banned"; then
+  echo "commit-msg: message contains a disallowed term." >&2
+  printf '%s\n' "$msg" | grep -Ei "$banned" >&2
+  exit 1
+fi
+exit 0
