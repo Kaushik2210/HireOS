@@ -4,7 +4,7 @@ Priority key: **Must** (MVP), **Should**, **Could**. Status is updated at each p
 
 | # | Phase | Priority | Status |
 |---|---|---|---|
-| 1 | Project foundation (tooling, lint, test setup, CI, design tokens, layout shell) | Must | Planned |
+| 1 | Project foundation (tooling, lint, test setup, CI, design tokens, layout shell) | Must | Done |
 | 2 | Authentication (Supabase Auth, protected routes, session expiry) | Must | Planned |
 | 3 | Candidate profile (profile, skills, projects, certs, experience, preferences) | Must | Planned |
 | 4 | Resume upload and parser (secure upload, extraction, Resume Health) | Must | Planned |
@@ -31,3 +31,7 @@ Phases 1-7, 9, 13 (core path): sign in, build profile/upload resume, see ranked 
 
 ## Future improvements
 Browser extension for user-initiated page capture, calendar integration for interviews, multi-resume A/B outcome analysis, additional LLM providers behind `LLMProvider`.
+
+## Known issues
+- `npm audit` reports 8 advisories, all in the dev-only Vitest toolchain (none in production dependencies; CI gates on `npm audit --omit=dev`). Upgrading Vitest is blocked by peer-dependency conflicts; revisit when the ecosystem catches up.
+- Docker is not installed on the primary dev machine. Phase 2 needs a local Postgres for "migrations apply on a fresh DB" (Supabase CLI requires Docker), or a hosted Supabase project.
