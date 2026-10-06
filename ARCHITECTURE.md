@@ -34,7 +34,15 @@ Dependency direction: `app -> features -> services -> (db, ai)`. `services` neve
 | Validation | Zod everywhere | One schema = runtime check + TS type; also guards model output. |
 | Email | Resend, draft-only | Nothing is sent without explicit approval. |
 | UI libs | Tailwind, shadcn/ui, Recharts, React Flow | Boring, well-supported. |
-| Tests | Vitest, Playwright, pgTAP/SQL tests for RLS | Cover logic, UI flows, and policy correctness. |
+| Tests | Vitest, Playwright, PGlite for migrations and RLS | Cover logic, UI flows, and policy correctness without needing Docker. |
+
+## Authentication
+- Supabase Auth, email and password. Sign-up, sign-in, sign-out, forgot and reset password, and a PKCE callback route (`/auth/callback`) for confirmation and recovery links.
+- All auth calls happen server-side in server actions (`features/auth/actions.ts`). No Supabase client or anon key ships to the browser.
+- `proxy.ts` refreshes the session each request (`getClaims`, local JWT verification) and redirects by route class: unknown paths are protected by default; only login, signup, forgot-password and `/auth/*` are open.
+- The proxy is the first gate only. The `(app)` layout and every action call `requireUser()`, which validates the token with the Auth server (`getUser`) rather than trusting cookies. RLS is the final gate.
+- Demo mode: when Supabase is not configured the proxy passes through, `requireUser()` returns a clearly labeled demo user, and auth pages explain there is nothing to sign in to.
+- Messages never reveal whether an account exists (sign-in, sign-up, reset). Redirect targets pass `safeRedirectPath`. Email links are built from the configured `APP_URL`, never from request headers.
 
 ## Cross-cutting
 - **Config**: typed env loader; the app boots with no keys (demo mode), features degrade to explicit "configure" states.

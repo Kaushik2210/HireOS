@@ -5,7 +5,7 @@ Priority key: **Must** (MVP), **Should**, **Could**. Status is updated at each p
 | # | Phase | Priority | Status |
 |---|---|---|---|
 | 1 | Project foundation (tooling, lint, test setup, CI, design tokens, layout shell) | Must | Done |
-| 2 | Authentication (Supabase Auth, protected routes, session expiry) | Must | Planned |
+| 2 | Authentication (Supabase Auth, protected routes, session expiry) | Must | Done (live round-trip unverified, see known issues) |
 | 3 | Candidate profile (profile, skills, projects, certs, experience, preferences) | Must | Planned |
 | 4 | Resume upload and parser (secure upload, extraction, Resume Health) | Must | Planned |
 | 5 | Job database and providers (JobProvider, demo provider, dedupe, demo dataset) | Must | Planned |
@@ -34,4 +34,7 @@ Browser extension for user-initiated page capture, calendar integration for inte
 
 ## Known issues
 - `npm audit` reports 8 advisories, all in the dev-only Vitest toolchain (none in production dependencies; CI gates on `npm audit --omit=dev`). Upgrading Vitest is blocked by peer-dependency conflicts; revisit when the ecosystem catches up.
-- Docker is not installed on the primary dev machine. Phase 2 needs a local Postgres for "migrations apply on a fresh DB" (Supabase CLI requires Docker), or a hosted Supabase project.
+- Authentication has not been exercised against a real Supabase project. Covered instead: action logic against a mocked client, the proxy, migrations and RLS on PGlite, and routing/validation/outage behavior end to end. Verify sign-up, email confirmation, reset and sign-out against a real project before relying on it. Supabase Auth settings to check: email confirmation on, leaked-password protection on, redirect URL allow-list includes `APP_URL`/auth/callback.
+- No Docker on the primary dev machine, so migrations are verified on PGlite rather than the Supabase CLI stack. A CI job running `supabase start` and `supabase db reset` is planned.
+- Rate limits are in memory per server instance (Phase 13 moves them to a shared store).
+- Account deletion and OAuth providers are Planned.

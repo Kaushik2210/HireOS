@@ -24,6 +24,16 @@ Resumes are sensitive PII. Security is a feature, designed in from phase 1.
 - **Audit**: login events, uploads, exports, deletions, status overrides, key changes.
 - **Dependencies**: lockfile, automated advisory checks in CI.
 
+## Implemented in Phase 2 (authentication)
+- Default-deny route protection in `proxy.ts`, re-verified server-side with `getUser`.
+- Zod validation on client and server; password 10-72 chars with a letter and a number; Supabase leaked-password protection errors are surfaced.
+- No account enumeration on sign-in, sign-up or reset; identical responses and messages.
+- Open-redirect protection on every `next` value.
+- Per-IP and per-email rate limits on sign-in, sign-up and reset (in memory, per instance; shared store planned for Phase 13).
+- Audit events for sign-in, failure, sign-up, sign-out, reset request and password change, with no emails or credentials, in an append-only table.
+- A backend outage is reported as unavailable, not as bad credentials.
+- Not yet done: CSP and security headers, MFA, account deletion, session management UI (Phase 13).
+
 ## User data controls
 View, edit, export (JSON), delete resume/profile/applications, wipe demo data, delete account (cascade + storage purge).
 
