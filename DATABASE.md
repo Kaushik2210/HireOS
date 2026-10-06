@@ -1,0 +1,61 @@
+# HireOS Database Design
+
+PostgreSQL via Supabase. Versioned SQL migrations in `db/migrations`, applied in order, idempotent on a fresh DB. Seed script in `db/seed`.
+
+## Conventions
+- `id uuid primary key default gen_random_uuid()`; `created_at`, `updated_at` (trigger-maintained) on every table.
+- Every user-owned table has `user_id uuid not null references auth.users(id) on delete cascade`.
+- Soft delete (`deleted_at timestamptz`) on user-authored content that can be restored (applications, resumes, outreach). Hard delete on account deletion cascades everything.
+- `is_demo boolean not null default false` on seedable tables so demo data can be wiped without touching real data.
+- Enums for closed sets (application status, work mode, job type); CHECK constraints for ranges (scores 0-100).
+- Indexes on every FK and on common filters (`user_id, status`, `user_id, created_at`).
+
+## Tables
+| Group | Table | Purpose |
+|---|---|---|
+| Identity | `users` | App-level mirror of `auth.users` (settings, onboarding state). |
+| | `profiles` | Normalized candidate profile, preferences, salary, work mode. |
+| | `career_goals` | Target roles, locations, level, timeline. |
+| Profile data | `skills` | Skill per user with type, level, evidence refs. Canonical skill catalog is a shared read-only table `skill_catalog`. |
+| | `projects`, `certifications`, `experiences` | Verified profile items; the only legal sources for generated claims. |
+| Resume | `resumes` | Uploaded file metadata (storage path, hash, parse status, health scores). |
+| | `resume_versions` | Tailored versions v1..vN, content, `job_id`, parent, claim `source_ref`s, approval state. |
+| Jobs | `companies` | Normalized company records (shared). |
+| | `job_sources` | Provider/source registry with terms basis. |
+| | `jobs` | Normalized jobs (shared catalog), dedupe key, embedding `vector`. |
+| | `job_matches` | Per user x job: strength, sub-scores JSON with inputs, label, gaps, scorer version. |
+| Pipeline | `applications` | One per user x job; status enum, resume version, dates, follow-up date, outcome. |
+| | `application_events` | Append-only status/change log. |
+| | `contacts` | People tied to companies/applications. |
+| | `outreach` | Drafts and sent-by-user records (type, channel, body, claim refs). |
+| | `followups` | Due dates and drafts for stale applications. |
+| Interviews | `interviews` | Rounds, dates, notes, prep checklist. |
+| | `interview_questions` | Generated/mock questions, answers, scores. |
+| Intelligence | `skill_gaps` | Per user x target: required vs have, severity, evidence job ids. |
+| | `career_recommendations` | Recommendations with evidence list and status. |
+| System | `analytics_events` | Product and funnel events. |
+| | `audit_logs` | Security-relevant actions (no PII payloads). |
+
+## Shared vs private
+- **Private** (user_id scoped): everything except the below.
+- **Shared read-only**: `companies`, `jobs`, `job_sources`, `skill_catalog` readable by authenticated users; writes only via service role (ingestion). Demo jobs are shared with `is_demo = true`.
+
+## Status transitions
+`applications.status` changes only through a SQL function / service that validates against an allowed-transition table and writes an `application_events` row in the same transaction. Direct status updates are blocked by trigger.
+
+## Row Level Security
+- RLS enabled on every table, no exceptions; default deny.
+- Private tables: `using (user_id = auth.uid())` and `with check (user_id = auth.uid())` for select/insert/update/delete.
+- Child tables without direct `user_id` (if any) check ownership through the parent via `exists`.
+- `audit_logs`: insert via service role only; users may read their own.
+- Service role used only server-side, in ingestion and background jobs, and never for user-initiated reads.
+- Tests: pgTAP/SQL tests create two users and assert cross-user select/update/delete return zero rows on every table; CI fails if any table lacks RLS (checked via `pg_class.relrowsecurity`).
+
+## Vectors
+`pgvector` embeddings on `jobs` and optionally profile items for semantic search; HNSW index. Embeddings only augment retrieval; they never feed the score.
+
+## Storage
+Private bucket `resumes`, path `{user_id}/{resume_id}`; storage policies mirror table RLS; access via short-lived signed URLs.
+
+## Data controls
+Export (JSON of all user rows), delete resume/profile/applications, delete account (cascade + storage purge). Demo wipe deletes `is_demo` rows for the user.
