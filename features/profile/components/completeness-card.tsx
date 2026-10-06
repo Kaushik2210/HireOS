@@ -45,11 +45,14 @@ export function CompletenessCard({
   completeness,
   showAll = false,
   profileHref = "/profile",
+  pending = 0,
 }: {
   completeness: Completeness;
   /** Show every criterion with its evidence (profile page) instead of just next steps. */
   showAll?: boolean;
   profileHref?: string;
+  /** Items awaiting the user's confirmation, which the score does not count yet. */
+  pending?: number;
 }) {
   const { score, criteria, nextSteps } = completeness;
 
@@ -62,6 +65,15 @@ export function CompletenessCard({
         </div>
         <ScoreBar score={score} label="Profile completeness" />
       </div>
+
+      {pending > 0 && (
+        <p className="text-warning text-xs">
+          <Link href={`${profileHref}#review`} className="underline">
+            {pending} {pending === 1 ? "item needs" : "items need"} your review
+          </Link>{" "}
+          and {pending === 1 ? "is" : "are"} not counted yet.
+        </p>
+      )}
 
       {nextSteps.length > 0 ? (
         <div>

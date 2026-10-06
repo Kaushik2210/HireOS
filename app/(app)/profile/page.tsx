@@ -6,11 +6,13 @@ import { DEMO_PERSONAS } from "@/db/seed/demo-personas";
 import { CollectionSection } from "@/features/profile/components/collection-section";
 import { CompletenessCard } from "@/features/profile/components/completeness-card";
 import { DemoControls } from "@/features/profile/components/demo-controls";
+import { ReviewPanel, type PendingItem } from "@/features/profile/components/review-panel";
 import { GoalsCard, ProfileCard } from "@/features/profile/components/singleton-cards";
 import { SECTION_ORDER } from "@/features/profile/config";
 import { requireUser } from "@/lib/auth/session";
 import type { CollectionEntity, CollectionItem } from "@/lib/profile/schemas";
 import { computeCompleteness } from "@/services/profile/completeness";
+import { pendingCount } from "@/services/profile/verified";
 
 export const metadata: Metadata = { title: "Career profile" };
 export const dynamic = "force-dynamic";
@@ -44,6 +46,11 @@ export default async function ProfilePage() {
   }
 
   const completeness = computeCompleteness(snapshot);
+  const pending: PendingItem[] = SECTION_ORDER.flatMap((entity) =>
+    (snapshot[entity] as CollectionItem<CollectionEntity>[])
+      .filter((item) => !item.confirmed)
+      .map((item) => ({ entity, item })),
+  );
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
@@ -61,6 +68,7 @@ export default async function ProfilePage() {
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem]">
         <div className="flex min-w-0 flex-col gap-6">
+          {pending.length > 0 && <ReviewPanel items={pending} />}
           <ProfileCard profile={snapshot.profile} />
           <GoalsCard goals={snapshot.goals} />
           {SECTION_ORDER.map((entity) => (
@@ -79,7 +87,7 @@ export default async function ProfilePage() {
           <h2 id="completeness-heading" className="mb-4 text-sm font-semibold">
             Profile completeness
           </h2>
-          <CompletenessCard completeness={completeness} showAll />
+          <CompletenessCard completeness={completeness} showAll pending={pendingCount(snapshot)} />
         </aside>
       </div>
     </div>

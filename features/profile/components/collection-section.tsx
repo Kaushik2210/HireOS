@@ -13,7 +13,7 @@ import type { CollectionEntity, CollectionItem } from "@/lib/profile/schemas";
 
 type AnyItem = CollectionItem<CollectionEntity>;
 
-function ItemDialog({
+export function ItemDialog({
   entity,
   item,
   trigger,
@@ -56,7 +56,14 @@ function ItemCard({ entity, item }: { entity: CollectionEntity; item: AnyItem })
     <li className="border-border bg-surface-raised rounded-md border p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h4 className="text-sm font-medium">{summary.title}</h4>
+          <h4 className="text-sm font-medium">
+            {summary.title}
+            {!item.confirmed && (
+              <Badge variant="warning" className="ml-2 align-middle">
+                Unconfirmed
+              </Badge>
+            )}
+          </h4>
           {summary.subtitle && <p className="text-muted text-sm">{summary.subtitle}</p>}
           {summary.meta && <p className="text-subtle mt-0.5 text-xs">{summary.meta}</p>}
         </div>
@@ -127,6 +134,11 @@ function SkillGroups({ items }: { items: CollectionItem<"skills">[] }) {
                       >
                         {skill.name}
                         <span className="text-subtle ml-1.5 text-xs">{skill.level}</span>
+                        {!skill.confirmed && (
+                          <span className="text-warning ml-1.5 text-[10px] uppercase">
+                            unconfirmed
+                          </span>
+                        )}
                       </button>
                     }
                   />

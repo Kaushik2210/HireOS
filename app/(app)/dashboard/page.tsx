@@ -8,6 +8,7 @@ import { CompletenessCard } from "@/features/profile/components/completeness-car
 import { requireUser } from "@/lib/auth/session";
 import { getCapabilities } from "@/lib/env";
 import { computeCompleteness, type Completeness } from "@/services/profile/completeness";
+import { pendingCount } from "@/services/profile/verified";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -71,9 +72,11 @@ export default async function DashboardPage() {
   const user = await requireUser();
 
   let completeness: Completeness | null = null;
+  let pending = 0;
   try {
     const snapshot = await (await getProfileStore(user)).getSnapshot(user.id);
     completeness = computeCompleteness(snapshot);
+    pending = pendingCount(snapshot);
   } catch {
     completeness = null; // shown as an inline error below; the rest of the page still works
   }
@@ -103,7 +106,7 @@ export default async function DashboardPage() {
           </div>
         </div>
         {completeness ? (
-          <CompletenessCard completeness={completeness} />
+          <CompletenessCard completeness={completeness} pending={pending} />
         ) : (
           <p role="alert" className="text-danger text-sm">
             Could not load your profile right now. Reload to try again.

@@ -141,3 +141,34 @@ export async function wipeDemoDataAction(): Promise<ActionResult> {
   refresh();
   return { ok: true };
 }
+
+/** Confirm one item the user has reviewed, so it counts as verified. */
+export async function confirmItemAction(entityInput: string, id: string): Promise<ActionResult> {
+  const entity = entitySchema.safeParse(entityInput);
+  const itemId = idSchema.safeParse(id);
+  if (!entity.success || !itemId.success) return { ok: false, error: "Unknown item." };
+
+  const user = await requireUser();
+  try {
+    const confirmed = await (
+      await getProfileStore(user)
+    ).confirmItem(user.id, entity.data, itemId.data);
+    if (!confirmed) return { ok: false, error: "That entry no longer exists." };
+  } catch {
+    return SAVE_FAILED;
+  }
+  refresh();
+  return { ok: true };
+}
+
+/** Confirm everything awaiting review. The UI asks the user to look first. */
+export async function confirmAllAction(): Promise<ActionResult> {
+  const user = await requireUser();
+  try {
+    const changed = await (await getProfileStore(user)).confirmAll(user.id);
+    refresh();
+    return { ok: true, message: `Confirmed ${changed} ${changed === 1 ? "item" : "items"}.` };
+  } catch {
+    return SAVE_FAILED;
+  }
+}
