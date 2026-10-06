@@ -77,3 +77,8 @@ test("hostile next values never leave the site", async ({ page }) => {
   // here we confirm the page does not navigate away.
   await expect(page).toHaveURL(/localhost:3101\/login/);
 });
+
+test("the profile page is protected", async ({ page }) => {
+  await page.goto("/profile");
+  await expect(page).toHaveURL(/\/login\?next=%2Fprofile$/);
+});

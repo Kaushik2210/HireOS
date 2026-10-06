@@ -66,9 +66,20 @@ Export (JSON of all user rows), delete resume/profile/applications, delete accou
 | `..01_helpers` | `set_updated_at()` trigger function |
 | `..02_users` | `users` (settings, onboarding state; email stays in Supabase Auth), RLS (own row), column-level update grants, `handle_new_user` trigger on `auth.users` |
 | `..03_audit_logs` | `audit_logs`, RLS (read own), service-role-only writes, append-only trigger (only the account-deletion detach is allowed) |
+| `..04_profile_and_goals` | `profiles`, `career_goals` (one row per user; preferences, salary, goals) |
+| `..05_profile_collections` | `education`, `experiences`, `projects`, `certifications`, `skills`, `achievements`; every row has `source` (`manual`/`resume`) and `confirmed` |
 
 Grants are explicit and least-privilege (`revoke all` from `anon`/`authenticated`, then grant what is needed), so correctness does not depend on Supabase default privileges.
 
 ## Verifying migrations and RLS
 `tests/db` applies every migration to a brand-new in-process Postgres (PGlite, real Postgres compiled to WASM) behind a small `auth` shim (`tests/db/auth-shim.sql`: `auth.users`, `auth.uid()`, and the `anon`/`authenticated`/`service_role` roles). Tests act as each role and user, and a generic test fails if any table in `public` lacks RLS. This runs in `npm test` with no Docker.
 Limits: it is not a Supabase stack. GoTrue, PostgREST, storage policies and extensions such as pgvector are not exercised. A real-stack check (`supabase db reset` plus the same assertions) is planned for CI once a Supabase project exists.
+
+## Profile data model (Phase 3)
+- Singleton tables (`profiles`, `career_goals`) are keyed by a unique `user_id`. Collection tables hold many rows per user.
+- **Verified items.** `source` records who produced an item; `confirmed` records whether the user vouches for it. Only confirmed items count as verified, and only verified items may back a generated claim. Resume-parsed items (Phase 4) arrive as `source = 'resume'`, `confirmed = false`. Editing an item confirms it.
+- Least-privilege grants: `id`, `is_demo` and timestamps are never client-writable; `user_id` is insert-only; `source` cannot be rewritten after insert.
+- Constraints mirror the Zod schemas as defense in depth: text lengths, `http(s)` links only, date ordering, array caps, enum values, case-insensitive unique skill names per user.
+- Dates are `date` columns holding the first of the month; the app exchanges `YYYY-MM`.
+- The skills catalog (canonical names, categories, aliases) lives in code at `lib/skills/catalog.ts`, not in a table, so normalization is versioned with the code and works with no database. This replaces the `skill_catalog` table sketched earlier.
+- Soft delete is not used for profile items: deleting means deleting, which is what the user data controls promise.

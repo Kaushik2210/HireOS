@@ -34,6 +34,14 @@ Resumes are sensitive PII. Security is a feature, designed in from phase 1.
 - A backend outage is reported as unavailable, not as bad credentials.
 - Not yet done: CSP and security headers, MFA, account deletion, session management UI (Phase 13).
 
+## Implemented in Phase 3 (profile)
+- RLS on all eight profile tables with two-user isolation tests; least-privilege column grants.
+- Only `http(s)` links are accepted (client, server and database), so a stored `javascript:` URL can never become a link. External links open with `rel="noopener noreferrer"`.
+- Server actions validate the section name and item id (UUID) before use, and ownership is enforced both in code and by RLS.
+- Per-section item limits bound storage and later prompt size.
+- Profile text is rendered by React (escaped); it is treated as untrusted when it later reaches an LLM.
+- Demo sandboxes are isolated per visitor and cannot reach real accounts.
+
 ## User data controls
 View, edit, export (JSON), delete resume/profile/applications, wipe demo data, delete account (cascade + storage purge).
 

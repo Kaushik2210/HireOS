@@ -44,6 +44,13 @@ Dependency direction: `app -> features -> services -> (db, ai)`. `services` neve
 - Demo mode: when Supabase is not configured the proxy passes through, `requireUser()` returns a clearly labeled demo user, and auth pages explain there is nothing to sign in to.
 - Messages never reveal whether an account exists (sign-in, sign-up, reset). Redirect targets pass `safeRedirectPath`. Email links are built from the configured `APP_URL`, never from request headers.
 
+## Candidate profile
+- `ProfileStore` interface (`db/profile`) with two implementations. `SupabaseProfileStore` is built from the user-scoped client, so RLS applies, and also filters by `user_id`. `MemoryProfileStore` backs demo mode.
+- Demo mode gives each visitor an isolated sandbox keyed by an anonymous cookie, seeded with a fictional persona, held in server memory only (bounded, evicts oldest) and wiped on restart. It carries no authority because demo mode has no real accounts.
+- Server actions validate with the same Zod schemas as the forms (the client is never trusted), cap items per section, and return field-level errors. Store errors are mapped to safe messages; raw database text is never shown or logged.
+- The profile UI is configuration-driven: one generic form and dialog render every section from field definitions in `features/profile/config.ts`.
+- `services/profile/completeness.ts` scores completeness from verified items only. It is deterministic, shows the evidence for every criterion, and says it is not a hiring prediction.
+
 ## Cross-cutting
 - **Config**: typed env loader; the app boots with no keys (demo mode), features degrade to explicit "configure" states.
 - **Errors**: typed `Result`/error classes; no raw error text to clients; no PII in logs.

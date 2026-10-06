@@ -6,7 +6,7 @@ Priority key: **Must** (MVP), **Should**, **Could**. Status is updated at each p
 |---|---|---|---|
 | 1 | Project foundation (tooling, lint, test setup, CI, design tokens, layout shell) | Must | Done |
 | 2 | Authentication (Supabase Auth, protected routes, session expiry) | Must | Done (live round-trip unverified, see known issues) |
-| 3 | Candidate profile (profile, skills, projects, certs, experience, preferences) | Must | Planned |
+| 3 | Candidate profile (profile, skills, projects, certs, experience, preferences) | Must | Done (Supabase path unverified live) |
 | 4 | Resume upload and parser (secure upload, extraction, Resume Health) | Must | Planned |
 | 5 | Job database and providers (JobProvider, demo provider, dedupe, demo dataset) | Must | Planned |
 | 6 | Job matching (Application Strength, breakdown, Job Intelligence page) | Must | Planned |
@@ -38,3 +38,7 @@ Browser extension for user-initiated page capture, calendar integration for inte
 - No Docker on the primary dev machine, so migrations are verified on PGlite rather than the Supabase CLI stack. A CI job running `supabase start` and `supabase db reset` is planned.
 - Rate limits are in memory per server instance (Phase 13 moves them to a shared store).
 - Account deletion and OAuth providers are Planned.
+- The Supabase profile store (`db/profile/supabase-store.ts`) is tested against a fake client for query shape and error mapping, and the schema and RLS are tested on PGlite, but the two have not been exercised together against a real Supabase project. Verify create, edit, delete and isolation with two real accounts.
+- Demo sandboxes live in server memory: they reset on restart and are not shared across serverless instances.
+- Profile items have no import path yet; resume parsing (Phase 4) will create unconfirmed items, and a confirm-all UI lands with it.
+- Month inputs use the browser's native control, whose appearance varies by browser.
