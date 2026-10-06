@@ -3,7 +3,13 @@ import { CommandPaletteTrigger } from "@/components/shell/command-palette";
 import { MobileNav } from "@/components/shell/mobile-nav";
 import { NavList } from "@/components/shell/nav-list";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  userMenu,
+}: {
+  children: React.ReactNode;
+  userMenu?: React.ReactNode;
+}) {
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[17.5rem_1fr]">
       <a
@@ -24,8 +30,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="md:hidden">
             <Brand />
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
             <CommandPaletteTrigger />
+            {userMenu}
           </div>
         </header>
         <main id="main" className="flex-1 px-4 py-6 md:px-6">
