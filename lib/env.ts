@@ -16,6 +16,8 @@ const serverSchema = z.object({
   INNGEST_EVENT_KEY: optionalString,
   INNGEST_SIGNING_KEY: optionalString,
   RESEND_API_KEY: optionalString,
+  /** Public origin of the app, used to build email-link redirects. */
+  APP_URL: optionalUrl,
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
@@ -43,6 +45,8 @@ export interface Capabilities {
   llm: boolean;
   email: boolean;
   backgroundJobs: boolean;
+  /** Server-only admin client available (audit logging, ingestion). */
+  serviceRole: boolean;
   /** True when no backing service is configured: the app runs on demo data. */
   demoMode: boolean;
 }
@@ -54,6 +58,7 @@ export function getCapabilities(env: ServerEnv = getServerEnv()): Capabilities {
     llm: Boolean(env.ANTHROPIC_API_KEY),
     email: Boolean(env.RESEND_API_KEY),
     backgroundJobs: Boolean(env.INNGEST_EVENT_KEY && env.INNGEST_SIGNING_KEY),
+    serviceRole: supabase && Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
     demoMode: !supabase,
   };
 }

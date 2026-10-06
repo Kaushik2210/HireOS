@@ -26,6 +26,7 @@ describe("getCapabilities", () => {
       llm: false,
       email: false,
       backgroundJobs: false,
+      serviceRole: false,
       demoMode: true,
     });
   });
