@@ -12,13 +12,16 @@ export function migrationFiles(): string[] {
     .sort();
 }
 
+export const SEED_FILE = path.join(root, "supabase/seed.sql");
+
 /** A brand-new database with the auth shim and every migration applied in order. */
-export async function createDb(): Promise<PGlite> {
+export async function createDb(options: { seed?: boolean } = {}): Promise<PGlite> {
   const db = new PGlite();
   await db.exec(readFileSync(path.join(__dirname, "auth-shim.sql"), "utf8"));
   for (const file of migrationFiles()) {
     await db.exec(readFileSync(path.join(MIGRATIONS_DIR, file), "utf8"));
   }
+  if (options.seed) await db.exec(readFileSync(SEED_FILE, "utf8"));
   return db;
 }
 
