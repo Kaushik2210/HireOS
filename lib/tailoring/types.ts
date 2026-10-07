@@ -52,6 +52,8 @@ export const sourceRefSchema = z.object({
     "skills",
     "achievements",
     "jobs",
+    // Text the user typed into a form, such as how they know a contact.
+    "user_input",
   ]),
   id: z.string().min(1),
   fields: z.array(z.string().min(1)).min(1),

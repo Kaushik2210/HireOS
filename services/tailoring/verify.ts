@@ -197,6 +197,8 @@ export function verifyLetterText(
   text: string,
   snapshot: ProfileSnapshot,
   job: Job,
+  /** More words that come from somewhere other than the profile, such as a recipient's name. */
+  extraSpans: string[] = [],
 ): { checked: number; blocked: BlockedClaim[] } {
   const items = lookup(snapshot);
   const profileText = [...items.values()].map(corpusOf).join("\n");
@@ -207,7 +209,9 @@ export function verifyLetterText(
   const list = sentences(text);
   list.forEach((sentence, index) => {
     let rest = sentence;
-    for (const span of jobSpans(job).sort((a, b) => b.length - a.length)) {
+    for (const span of [...jobSpans(job), ...extraSpans.filter(Boolean)].sort(
+      (a, b) => b.length - a.length,
+    )) {
       rest = rest.split(span).join(" ");
     }
     for (const found of scanCatalogSkills(rest)) {
@@ -235,7 +239,12 @@ export function verifyLetterText(
 }
 
 /** A letter passes when its generated claims trace to verified items and its final text is grounded. */
-export function verifyLetter(doc: LetterDoc, snapshot: ProfileSnapshot, job: Job): Verification {
+export function verifyLetter(
+  doc: Pick<LetterDoc, "paragraphs" | "text" | "edited">,
+  snapshot: ProfileSnapshot,
+  job: Job,
+  extraSpans: string[] = [],
+): Verification {
   const items = lookup(snapshot);
   const blocked: BlockedClaim[] = [];
   let checked = 0;
@@ -244,7 +253,12 @@ export function verifyLetter(doc: LetterDoc, snapshot: ProfileSnapshot, job: Job
     for (const claim of doc.paragraphs.flat()) {
       checked++;
       for (const ref of claim.refs as SourceRef[]) {
-        const ok = ref.entity === "jobs" ? ref.id === job.id : items.has(`${ref.entity}:${ref.id}`);
+        const ok =
+          ref.entity === "user_input"
+            ? true
+            : ref.entity === "jobs"
+              ? ref.id === job.id
+              : items.has(`${ref.entity}:${ref.id}`);
         if (!ok) {
           blocked.push({
             claim_id: claim.id,
@@ -257,6 +271,6 @@ export function verifyLetter(doc: LetterDoc, snapshot: ProfileSnapshot, job: Job
     }
   }
 
-  const textual = verifyLetterText(doc.text, snapshot, job);
+  const textual = verifyLetterText(doc.text, snapshot, job, extraSpans);
   return toVerification(Math.max(checked, textual.checked), [...blocked, ...textual.blocked]);
 }
