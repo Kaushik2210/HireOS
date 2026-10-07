@@ -70,8 +70,10 @@ export function Board({
   now: Date;
 }) {
   return (
+    // `relative` makes this the containing block for the screen-reader-only labels inside, so
+    // they are clipped with the board instead of widening the whole page.
     <div
-      className="-mx-4 overflow-x-auto px-4 pb-2"
+      className="relative -mx-4 overflow-x-auto px-4 pb-2"
       role="region"
       aria-label="Pipeline board"
       tabIndex={0}
