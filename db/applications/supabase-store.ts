@@ -15,6 +15,7 @@ import {
 import { EVENT_KINDS, STATUSES, type Status } from "@/lib/applications/types";
 
 const MAX_LIST = 500;
+const MAX_ACTIVITY = 2000;
 const UNIQUE_VIOLATION = "23505";
 const CHECK_VIOLATION = "23514";
 const INSUFFICIENT_PRIVILEGE = "42501";
@@ -152,6 +153,18 @@ export class SupabaseApplicationStore implements ApplicationStore {
       .maybeSingle();
     if (error) fail(error);
     return data ? toApplication(data) : null;
+  }
+
+  async activity(userId: string) {
+    const { data, error } = await this.client
+      .from("application_events")
+      .select("*")
+      .eq("user_id", userId)
+      .in("kind", ["created", "status_changed", "followed_up"])
+      .order("created_at", { ascending: false })
+      .limit(MAX_ACTIVITY);
+    if (error) fail(error);
+    return ((data ?? []) as Row[]).map(toEvent).filter((e): e is ApplicationEvent => e !== null);
   }
 
   async create(userId: string, input: NewApplication): Promise<Application> {

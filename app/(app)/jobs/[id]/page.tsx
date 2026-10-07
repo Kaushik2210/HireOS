@@ -6,17 +6,21 @@ import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getJobStore } from "@/db/jobs";
+import { getApplicationStore } from "@/db/applications";
+import type { Application } from "@/db/applications/store";
 import { getMatchStore } from "@/db/matching";
 import {
   BuildProfilePrompt,
   JobIntelligence,
 } from "@/features/matching/components/job-intelligence";
 import { loadMatchContext } from "@/features/matching/load";
+import { TrackJobForm } from "@/features/applications/components/controls";
 import { DeleteJobButton } from "@/features/jobs/components/job-controls";
 import { formatJobPay, formatPostedDate, sourceLabel } from "@/features/jobs/format";
 import { label } from "@/features/profile/format";
 import { requireUser } from "@/lib/auth/session";
 import type { Job } from "@/lib/jobs/schemas";
+import { STATUS_LABELS } from "@/lib/applications/types";
 import type { MatchResult } from "@/lib/matching/types";
 import { canScore, scoreJob } from "@/services/matching/score";
 
@@ -116,6 +120,14 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
     matchFailed = true;
   }
 
+  // Where this job stands in the person's pipeline, if they track it. Not essential to the page.
+  let tracked: Application | null = null;
+  try {
+    tracked = await (await getApplicationStore(user)).getByJob(user.id, job.id);
+  } catch {
+    tracked = null;
+  }
+
   const pay = formatJobPay(job);
   const posted = formatPostedDate(job.posted_at);
   const isOwn = job.owner_user_id !== null;
@@ -166,6 +178,26 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
             </Link>
           </Button>
           {isOwn && <DeleteJobButton jobId={job.id} />}
+        </div>
+        <div
+          className="border-border bg-surface mt-4 rounded-lg border p-4"
+          data-testid="pipeline-status"
+        >
+          {tracked ? (
+            <p className="flex flex-wrap items-center gap-2 text-sm">
+              In your pipeline:
+              <Badge variant="accent">{STATUS_LABELS[tracked.status]}</Badge>
+              <Link
+                href={`/applications/${tracked.id}`}
+                prefetch={false}
+                className="text-accent hover:underline"
+              >
+                Open the application
+              </Link>
+            </p>
+          ) : (
+            <TrackJobForm jobId={job.id} />
+          )}
         </div>
         {job.apply_url && (
           <p className="text-subtle mt-2 text-xs">

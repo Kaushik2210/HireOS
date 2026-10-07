@@ -317,6 +317,7 @@ function fake(script: Script) {
         update: (a: unknown) => ((call.op = "update"), (call.args = a), chain),
         delete: () => ((call.op = "delete"), chain),
         eq: (c: string, v: unknown) => (call.filters.push([c, v]), chain),
+        in: (c: string, v: unknown) => (call.filters.push([c, v]), chain),
         order: () => chain,
         limit: () => chain,
         single: async () => result(),
@@ -491,6 +492,24 @@ describe("SupabaseApplicationStore", () => {
         fake({ update: [{ error: { code: "42501" } }] }).client,
       ).updateDetails("u", "x", update),
     ).toBe("invalid_document");
+  });
+
+  it("reads only the events the follow-up engine needs", async () => {
+    const event = {
+      id: "e1",
+      application_id: "a",
+      kind: "followed_up",
+      from_status: null,
+      to_status: null,
+      note: null,
+      created_at: "2026-10-01T00:00:00Z",
+    };
+    const { client, calls } = fake({ select: [[event]] });
+    expect(await new SupabaseApplicationStore(client).activity("u1")).toHaveLength(1);
+    expect(calls[0]!.filters).toEqual([
+      ["user_id", "u1"],
+      ["kind", ["created", "status_changed", "followed_up"]],
+    ]);
   });
 
   it("deletes only the caller's row", async () => {

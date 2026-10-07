@@ -107,7 +107,6 @@ const cleanNote = (max: number) =>
     .transform((v) => {
       const cleaned = (v ?? "")
         .replace(/\r\n/g, "\n")
-        // eslint-disable-next-line no-control-regex
         .replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "")
         .trim();
       return cleaned.length > 0 ? cleaned : null;

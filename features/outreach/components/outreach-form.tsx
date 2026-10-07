@@ -19,8 +19,14 @@ const field = "flex flex-col gap-1.5 text-sm";
  * Who the message is for, plus the few facts only the person knows. Typed values go to the
  * server in the request body, never into the page address.
  */
-export function OutreachForm({ jobId }: { jobId: string }) {
-  const [type, setType] = useState<OutreachType>("recruiter");
+export function OutreachForm({
+  jobId,
+  initialType = "recruiter",
+}: {
+  jobId: string;
+  initialType?: OutreachType;
+}) {
+  const [type, setType] = useState<OutreachType>(initialType);
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
   const [context, setContext] = useState("");

@@ -13,7 +13,7 @@ import { Guardrail } from "@/features/outreach/components/guardrail";
 import { OutreachForm } from "@/features/outreach/components/outreach-form";
 import { requireUser } from "@/lib/auth/session";
 import type { Job } from "@/lib/jobs/schemas";
-import { OUTREACH_META } from "@/lib/outreach/types";
+import { OUTREACH_META, OUTREACH_TYPES } from "@/lib/outreach/types";
 import { canScore } from "@/services/matching/score";
 import { buildCandidate } from "@/services/matching/candidate";
 import { pendingCount } from "@/services/profile/verified";
@@ -21,9 +21,20 @@ import { pendingCount } from "@/services/profile/verified";
 export const metadata: Metadata = { title: "Prepare outreach" };
 export const dynamic = "force-dynamic";
 
-export default async function JobOutreachPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function JobOutreachPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const id = z.uuid().safeParse((await params).id);
   if (!id.success) notFound();
+  const rawType = (await searchParams).type;
+  const startType = z
+    .enum(OUTREACH_TYPES)
+    .catch("recruiter")
+    .parse(Array.isArray(rawType) ? rawType[0] : rawType);
   const user = await requireUser();
 
   let job: Job | null = null;
@@ -86,7 +97,7 @@ export default async function JobOutreachPage({ params }: { params: Promise<{ id
             <h2 id="write-heading" className="mb-4 text-sm font-semibold">
               Write a draft
             </h2>
-            <OutreachForm jobId={job.id} />
+            <OutreachForm jobId={job.id} initialType={startType} />
           </section>
           <aside
             aria-labelledby="saved-heading"

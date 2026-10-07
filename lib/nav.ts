@@ -61,7 +61,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Applications",
     href: "/applications",
     icon: KanbanSquare,
-    status: "planned",
+    status: "live",
     phase: 9,
   },
   {
@@ -170,8 +170,9 @@ export const PALETTE_ACTIONS: readonly PaletteAction[] = [
     id: "add-application",
     label: "Add application",
     keywords: ["track", "crm"],
-    status: "planned",
+    status: "live",
     phase: 9,
+    href: "/applications",
   },
   {
     id: "view-analytics",

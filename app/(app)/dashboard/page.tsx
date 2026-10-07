@@ -1,15 +1,22 @@
-import { Activity, BarChart3, Lightbulb, ListChecks } from "lucide-react";
+import { Activity, Lightbulb } from "lucide-react";
 import type { Metadata } from "next";
 import { EmptyState } from "@/components/states/empty-state";
 import { Badge, PlannedBadge } from "@/components/ui/badge";
 import Link from "next/link";
+import { getApplicationStore } from "@/db/applications";
+import type { Application, ApplicationEvent } from "@/db/applications/store";
 import { getJobStore } from "@/db/jobs";
 import { getProfileStore } from "@/db/profile";
+import {
+  PipelineSummaryPanel,
+  TodayPanel,
+} from "@/features/applications/components/dashboard-panels";
 import { TopOpportunities } from "@/features/matching/components/top-opportunities";
 import { loadMatchContext } from "@/features/matching/load";
 import { CompletenessCard } from "@/features/profile/components/completeness-card";
 import { requireUser } from "@/lib/auth/session";
 import { getCapabilities } from "@/lib/env";
+import { dueFollowUps, summarize } from "@/services/applications/followups";
 import { canScore } from "@/services/matching/score";
 import { listVisibleJobs, rankJobs, type RankedJob } from "@/services/matching/rank";
 import type { Candidate } from "@/services/matching/candidate";
@@ -27,18 +34,6 @@ const PLANNED_PANELS = [
     description: "Readiness score built from your profile, resume health and skill coverage.",
     icon: Activity,
     phase: 4,
-  },
-  {
-    title: "Pipeline summary",
-    description: "Applications by stage, from discovered to offer.",
-    icon: BarChart3,
-    phase: 9,
-  },
-  {
-    title: "Today's actions",
-    description: "Follow-ups due, new high-match jobs, and resumes you can improve.",
-    icon: ListChecks,
-    phase: 9,
   },
   {
     title: "Career insights",
@@ -96,6 +91,21 @@ export default async function DashboardPage() {
   } catch {
     matchesFailed = true;
   }
+
+  let applications: Application[] = [];
+  let activity: ApplicationEvent[] = [];
+  let pipelineFailed = false;
+  try {
+    const store = await getApplicationStore(user);
+    [applications, activity] = await Promise.all([store.list(user.id), store.activity(user.id)]);
+  } catch {
+    pipelineFailed = true;
+  }
+  const followUps = dueFollowUps(applications, activity, new Date());
+  const trackedJobs = new Set(applications.map((a) => a.jobId));
+  const untracked = ranked.filter(
+    (r) => (r.match.label === "strong" || r.match.label === "good") && !trackedJobs.has(r.job.id),
+  );
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
@@ -189,6 +199,44 @@ export default async function DashboardPage() {
           <TopOpportunities ranked={ranked} candidate={candidate} pending={matchPending} />
         )}
       </section>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <section
+          aria-labelledby="pipeline-summary"
+          className="border-border bg-surface rounded-lg border p-4"
+        >
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 id="pipeline-summary" className="text-sm font-medium">
+              Pipeline summary
+            </h2>
+            {user.isDemo && applications.some((a) => a.isDemo) && (
+              <Badge variant="accent">Demo data</Badge>
+            )}
+          </div>
+          {pipelineFailed ? (
+            <p role="alert" className="text-danger text-sm">
+              Could not load your pipeline. Reload to try again.
+            </p>
+          ) : (
+            <PipelineSummaryPanel summary={summarize(applications)} />
+          )}
+        </section>
+        <section
+          aria-labelledby="today-actions"
+          className="border-border bg-surface rounded-lg border p-4"
+        >
+          <h2 id="today-actions" className="mb-4 text-sm font-medium">
+            Today&apos;s actions
+          </h2>
+          {pipelineFailed ? (
+            <p role="alert" className="text-danger text-sm">
+              Could not load your actions. Reload to try again.
+            </p>
+          ) : (
+            <TodayPanel followUps={followUps} applications={applications} untracked={untracked} />
+          )}
+        </section>
+      </div>
 
       <section aria-labelledby="modules" className="flex flex-col gap-3">
         <h2 id="modules" className="text-sm font-medium">

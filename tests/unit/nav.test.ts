@@ -18,6 +18,7 @@ describe("navigation registry", () => {
       "matches",
       "documents",
       "outreach",
+      "applications",
     ]);
   });
 

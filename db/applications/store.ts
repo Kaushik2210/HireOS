@@ -74,6 +74,8 @@ export interface ApplicationStore {
   /** Null when it does not exist or belongs to someone else. */
   get(userId: string, id: string): Promise<ApplicationWithEvents | null>;
   getByJob(userId: string, jobId: string): Promise<Application | null>;
+  /** Moves, creations and follow-up records across all applications, for the follow-up engine. */
+  activity(userId: string): Promise<ApplicationEvent[]>;
   create(userId: string, input: NewApplication): Promise<Application>;
   /** Moves only along allowed transitions and logs the move in the same step. */
   changeStatus(

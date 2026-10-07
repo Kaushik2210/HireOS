@@ -112,6 +112,15 @@ export class MemoryApplicationStore implements DemoApplicationStore {
     return found ? structuredClone(found) : null;
   }
 
+  async activity(userId: string) {
+    const box = await this.box(userId);
+    return structuredClone(
+      box.events.filter(
+        (e) => e.kind === "created" || e.kind === "status_changed" || e.kind === "followed_up",
+      ),
+    );
+  }
+
   async create(userId: string, input: NewApplication): Promise<Application> {
     const box = await this.box(userId);
     if (box.applications.some((a) => a.jobId === input.jobId)) {
