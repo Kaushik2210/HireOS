@@ -160,6 +160,11 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
               Cover letter
             </Link>
           </Button>
+          <Button asChild variant="secondary">
+            <Link href={`/jobs/${job.id}/outreach`} prefetch={false}>
+              Prepare outreach
+            </Link>
+          </Button>
           {isOwn && <DeleteJobButton jobId={job.id} />}
         </div>
         {job.apply_url && (

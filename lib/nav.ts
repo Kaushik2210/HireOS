@@ -55,7 +55,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     status: "live",
     phase: 7,
   },
-  { id: "outreach", label: "Outreach", href: "/outreach", icon: Send, status: "planned", phase: 8 },
+  { id: "outreach", label: "Outreach", href: "/outreach", icon: Send, status: "live", phase: 8 },
   {
     id: "applications",
     label: "Applications",
@@ -162,8 +162,9 @@ export const PALETTE_ACTIONS: readonly PaletteAction[] = [
     id: "prepare-outreach",
     label: "Prepare outreach",
     keywords: ["email", "linkedin"],
-    status: "planned",
+    status: "live",
     phase: 8,
+    href: "/outreach",
   },
   {
     id: "add-application",

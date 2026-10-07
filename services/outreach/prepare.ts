@@ -43,7 +43,6 @@ export function prepareEdit(
   draft: OutreachDraft,
   edit: { text: string; subject?: string | null },
 ): { ok: true; edit: DraftEdit } | { ok: false; reason: PrepareFailure } {
-  // eslint-disable-next-line no-control-regex
   const clean = (s: string) =>
     s.replace(/\r\n/g, "\n").replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "");
   const text = clean(edit.text).trim();

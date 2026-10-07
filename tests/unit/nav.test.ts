@@ -10,7 +10,15 @@ describe("navigation registry", () => {
 
   it("only marks the built features as live", () => {
     const live = NAV_ITEMS.filter((i) => i.status === "live").map((i) => i.id);
-    expect(live).toEqual(["dashboard", "profile", "resume", "jobs", "matches", "documents"]);
+    expect(live).toEqual([
+      "dashboard",
+      "profile",
+      "resume",
+      "jobs",
+      "matches",
+      "documents",
+      "outreach",
+    ]);
   });
 
   it("never marks a palette action live without a destination", () => {
