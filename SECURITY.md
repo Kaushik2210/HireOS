@@ -81,6 +81,13 @@ Known limits: parsing runs in the request process (bounded, but a pathological f
 - **Row Level Security** on `document_versions`: own rows only, inserts must reference a visible job and an owned parent, column grants limit updates to the review state, and a `security definer` helper that only answers "is this version mine?" avoids policy recursion. Two-user tests plus negative controls.
 - **Export is user-driven.** Copy and download happen in the browser from the stored text; there is no email, upload or share path.
 
+## Implemented in Phase 8 (outreach)
+- **No automation, by construction.** There is no code path that connects to LinkedIn or a mail service, fetches a recipient's profile, sends a message, or schedules one. A draft is text for the person to copy. "I sent this myself" records their own action and triggers nothing.
+- **Drafts say only what is true.** Generated lines come from verified items, the posting's title and company, and what the person typed. Applied and spoke-with statements need an explicit tick. Edits and every typed field are re-checked for skills and numbers the profile lacks, and a flagged draft cannot be approved.
+- **Typed text is untrusted.** Names, roles and connection text have control characters stripped and lengths bounded, are rendered as text, and are tested with injection strings. The create and edit actions accept only the documented fields: extra content from the browser is ignored, so a forged request cannot plant wording or a status.
+- **No personal data in URLs.** Recipient details travel in the request body only, and pages are addressed by ids.
+- **Row Level Security** on `outreach_drafts`: own rows only, inserts must reference a visible job and cannot arrive already approved or sent, column grants stop re-parenting a draft, and database triggers freeze approved and sent drafts. Two-user tests plus negative controls.
+
 ## User data controls
 View, edit, export (JSON), delete resume/profile/applications, wipe demo data, delete account (cascade + storage purge).
 

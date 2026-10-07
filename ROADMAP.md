@@ -11,7 +11,7 @@ Priority key: **Must** (MVP), **Should**, **Could**. Status is updated at each p
 | 5 | Job database and providers (JobProvider, demo provider, dedupe, demo dataset) | Must | Done (no real provider by design; Supabase path unverified live) |
 | 6 | Job matching (Application Strength, breakdown, Job Intelligence page) | Must | Done (Supabase path unverified live; weights uncalibrated; LLM explanations Planned) |
 | 7 | Resume optimizer (tailoring, diff, versions, integrity verifier, cover letter) | Must | Done (selection and ordering only; AI rewriting Planned; Supabase path unverified live) |
-| 8 | Outreach assistant (drafts, LinkedIn copy-only assistant) | Should | Planned |
+| 8 | Outreach assistant (drafts, LinkedIn copy-only assistant) | Should | Done (templated drafts, copy only; AI wording Planned; Supabase path unverified live) |
 | 9 | Application CRM (Kanban, transitions, events, follow-ups) | Must | Planned |
 | 10 | Interview hub (prep, questions, Mock Interview Mode) | Should | Planned |
 | 11 | Career analytics (funnel, rates, "Why am I not getting interviews?", gap analyzer) | Should | Planned |
@@ -68,3 +68,10 @@ Browser extension for user-initiated page capture, calendar integration for inte
 - The cover letter is a short fixed-structure draft: a greeting, one project line, one role line, the matching skills and a closing, each quoted from the profile. It is deliberately plain; the user edits it. Edited text is checked for skills and numbers that are not in the verified profile, but the check cannot judge tone or implied claims ("led", "owned") in free wording.
 - Version approval is the user's own review step and nothing more: it does not submit, send or share anything. Approved versions are immutable, including in the database.
 - The Supabase document store and `document_versions` through PostgREST have not run against a real project (SQL tested on PGlite, client calls against a fake). Verify save, approve, compare and delete with two real accounts.
+- Outreach drafts are built from fixed templates around verbatim profile text. They are plain and short on purpose; they cannot adapt tone, mention something specific about the recipient or company, or vary between drafts. LLM wording is Planned and must pass the same verifier.
+- Nothing is sent or connected: the person copies a draft into their own email or LinkedIn. "I sent this myself" is only their own record, so it cannot be checked, and nothing watches for replies. Follow-up reminders arrive with the application tracker (Phase 9).
+- HireOS cannot check what the person types about a recipient or how they know them. A recipient's name and role are accepted as typed; the "how you know them" text is checked like the rest of the message, so a skill or number in it that the profile lacks is flagged.
+- The follow-up and thank-you drafts say the person applied or spoke only after they tick a box saying so. The app cannot confirm either, and applications are not tracked until Phase 9.
+- A LinkedIn note is limited to 300 characters, which is LinkedIn's connection-note limit for most accounts as of writing; accounts with a different limit would need that constant changed (`LINKEDIN_NOTE_LIMIT`).
+- Drafts are hard-deleted (no soft delete or trash), and a draft keeps the wording it was written with even if the profile changes afterwards (a notice says so).
+- The Supabase outreach store and `outreach_drafts` through PostgREST have not run against a real project (SQL tested on PGlite, client calls against a fake). Verify write, edit, approve, mark sent and delete with two real accounts.

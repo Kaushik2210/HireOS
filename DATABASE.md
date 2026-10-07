@@ -27,7 +27,7 @@ PostgreSQL via Supabase. Versioned SQL migrations in `supabase/migrations` (the 
 | Pipeline | `applications` | One per user x job; status enum, resume version, dates, follow-up date, outcome. |
 | | `application_events` | Append-only status/change log. |
 | | `contacts` | People tied to companies/applications. |
-| | `outreach` | Drafts and sent-by-user records (type, channel, body, claim refs). |
+| | `outreach_drafts` | Copy-only drafts and the user's own sent records (type, channel, subject, body, claim refs, review state). Hard-deleted, not soft-deleted. |
 | | `followups` | Due dates and drafts for stale applications. |
 | Interviews | `interviews` | Rounds, dates, notes, prep checklist. |
 | | `interview_questions` | Generated/mock questions, answers, scores. |
@@ -73,6 +73,7 @@ Export (JSON of all user rows), delete resume/profile/applications, delete accou
 | `..08_jobs` | `job_sources` (reference rows), `companies`, `jobs`, the `search_jobs()` function, and the private-job limit trigger |
 | `..09_job_matches` | `job_matches`: the last Application Strength saved per user and job, with RLS (own rows only) and a per-user cap |
 | `..10_document_versions` | `document_versions`: numbered tailored resumes and cover letters per user and job, immutable once saved, approvable only after a passing integrity check |
+| `..11_outreach_drafts` | `outreach_drafts`: copy-only email and LinkedIn drafts per user and job. Editable while a draft, frozen once approved, and the sent state is only the user's own record |
 
 Grants are explicit and least-privilege (`revoke all` from `anon`/`authenticated`, then grant what is needed), so correctness does not depend on Supabase default privileges.
 
@@ -121,3 +122,10 @@ Limits: it is not a Supabase stack. GoTrue, PostgREST, storage policies and exte
 - RLS: own rows only. Inserts must name the caller, a job the caller can see (through `jobs` RLS) and, if given, a parent the caller owns. Because a policy that reads its own table would recurse, the parent check uses a small `security definer` function (`owns_document_version`) that answers only "is this version mine?" for the calling user.
 - Deleting a job or an account cascades. A trigger caps each user at 200 versions.
 - Tested with two users, every constraint, the immutability and approval rules, cascades and parent handling, plus negative controls (removing the approval CHECK or the parent check fails a test). The tests also caught a real gap: a `verification` object without `ok` slipped past the first version of the CHECK.
+
+## Outreach drafts (Phase 8)
+- One row per draft: `type` (recruiter, hiring manager, referral, alumni, LinkedIn note, follow-up, thank-you), `channel` (`email` or `linkedin`), the optional recipient name and role and the user's own "how you know them" text, `subject` (email only), `body`, the full `content` with each line's source, the `verification` result and the `profile_hash` it was written from.
+- **Channel rules in the database.** A LinkedIn note is exactly the `linkedin_note` type, has no subject and fits 300 characters; an email always has a subject. These are CHECK constraints, so no client can store anything else.
+- **Review states.** `draft` to `approved` to `sent`, never backwards, with CHECKs tying `approved_at` and `sent_at` to the state and requiring a passing integrity check for anything past `draft`. A trigger lets a draft be edited, freezes `body`, `subject` and `content` once approved (only the move to `sent` is allowed), and refuses any change to a sent draft. A draft cannot be marked sent without approval because both dates are required to be consistent with the state.
+- RLS: own rows only. Inserts must name the caller and a job the caller can see, and users cannot insert an already approved or sent row. Column grants allow updating only the words, the check and the review state, never the owner, job, type, channel or recipient. Deleting a job or account cascades, and a trigger caps each user at 300 drafts.
+- Tested with two users, every constraint, the state machine, the freeze and sent rules, cascades, and negative controls (removing the passing-check CHECK, or removing the sent-immutability rule, each fails a test).

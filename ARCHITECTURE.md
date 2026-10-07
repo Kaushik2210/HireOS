@@ -87,6 +87,13 @@ Importing parsed items is a separate, explicit step: items enter the profile as 
 - **Compare** (`diff.ts`): a line diff of two versions' plain text.
 - **Pages.** `/jobs/[id]/tailor` (live preview from the current profile, the picker, reasons, missing requirements, save), `/jobs/[id]/cover-letter` (editable draft), `/jobs/[id]/documents/[versionId]` (review, approve, compare, copy, download, delete) and `/documents` (everything saved, grouped by job). Nothing is sent anywhere: the user applies on the employer's own page.
 
+## Outreach pipeline
+- **Build** (`services/outreach/build.ts`): a template per outreach type produces claims, a plain-text body and, for email, a subject. It refuses to build when the profile is empty, when an alumni note has no context, or when a follow-up or thank-you has not been confirmed.
+- **Verify** (`services/outreach/verify.ts`): the letter verifier plus a subject check and the LinkedIn length limit.
+- **Prepare** (`services/outreach/prepare.ts`): builds a new draft, or applies the user's edit and re-checks it. Always on the server.
+- **Drafts** (`db/outreach`): `OutreachStore` with an in-memory demo implementation and a Supabase one. Draft, approved and sent are the only states, in that order.
+- **Pages.** `/jobs/[id]/outreach` (write a draft; typed values go in the request body, never the URL), `/jobs/[id]/outreach/[draftId]` (edit, review, copy, record that you sent it, delete) and `/outreach` (all drafts by job). Every page states that HireOS sends and connects to nothing.
+
 ## Cross-cutting
 - **Config**: typed env loader; the app boots with no keys (demo mode), features degrade to explicit "configure" states.
 - **Errors**: typed `Result`/error classes; no raw error text to clients; no PII in logs.
