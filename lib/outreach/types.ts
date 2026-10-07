@@ -93,7 +93,6 @@ const oneLine = (max: number) =>
     .max(max * 2)
     .nullish()
     .transform((v) => {
-      // eslint-disable-next-line no-control-regex
       const cleaned = (v ?? "")
         .replace(/[\u0000-\u001f\u007f]+/g, " ")
         .replace(/\s+/g, " ")
