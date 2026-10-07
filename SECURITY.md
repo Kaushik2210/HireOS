@@ -88,6 +88,14 @@ Known limits: parsing runs in the request process (bounded, but a pathological f
 - **No personal data in URLs.** Recipient details travel in the request body only, and pages are addressed by ids.
 - **Row Level Security** on `outreach_drafts`: own rows only, inserts must reference a visible job and cannot arrive already approved or sent, column grants stop re-parenting a draft, and database triggers freeze approved and sent drafts. Two-user tests plus negative controls.
 
+## Implemented in Phase 9 (application CRM)
+- **Nothing is submitted or sent.** A status records what the person says happened. There is no code path that applies to a job, contacts an employer, or reads a mailbox; "Open application" links to the employer's own page.
+- **History cannot be rewritten.** Status moves are validated against an allowed-move table inside one database function, the event log is append-only for every role, and direct status updates are blocked by a trigger even for the service role. A refused move leaves no event behind.
+- **Typed text is untrusted.** Notes are length-bounded with control characters removed, rendered as text, and never interpreted. Every action validates its input with Zod and checks ownership server-side; the browser cannot set a status, an event or a date outside the allowed rules.
+- **Linked documents must be the person's own.** The action checks kind, owner and job, and the database policy independently requires ownership, so a forged id cannot attach someone else's resume.
+- **Row Level Security** on both tables with explicit column grants, a cap per user, and two-user tests plus negative controls.
+- **Demo data is labelled and removable.** Sample applications exist only in the demo sandbox, carry a badge, and clear without touching what the visitor added.
+
 ## User data controls
 View, edit, export (JSON), delete resume/profile/applications, wipe demo data, delete account (cascade + storage purge).
 

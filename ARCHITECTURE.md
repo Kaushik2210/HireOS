@@ -94,6 +94,12 @@ Importing parsed items is a separate, explicit step: items enter the profile as 
 - **Drafts** (`db/outreach`): `OutreachStore` with an in-memory demo implementation and a Supabase one. Draft, approved and sent are the only states, in that order.
 - **Pages.** `/jobs/[id]/outreach` (write a draft; typed values go in the request body, never the URL), `/jobs/[id]/outreach/[draftId]` (edit, review, copy, record that you sent it, delete) and `/outreach` (all drafts by job). Every page states that HireOS sends and connects to nothing.
 
+## Application pipeline
+- **Rules** (`lib/applications/types.ts`): the statuses and the single table of allowed moves, plus the Zod schemas for every input. The database holds the same table as data and a test keeps the two identical.
+- **Follow-ups** (`services/applications/followups.ts`): pure functions that decide, from an application and its events, whether a follow-up is due, and summarise the pipeline. Nothing is stored or sent.
+- **Store** (`db/applications`): `ApplicationStore` with an in-memory demo implementation (which also creates the sample applications) and a Supabase one that calls the database functions for moves and notes.
+- **Pages.** `/applications` (the board, summary and sample-data controls), `/applications/[id]` (timeline, status change, notes, follow-up date, linked documents, delete), a "track this job" form on each job page, and Pipeline summary and Today's actions panels on the dashboard. A follow-up draft opens the outreach page on the follow-up kind, where the person still confirms they applied before anything is written.
+
 ## Cross-cutting
 - **Config**: typed env loader; the app boots with no keys (demo mode), features degrade to explicit "configure" states.
 - **Errors**: typed `Result`/error classes; no raw error text to clients; no PII in logs.

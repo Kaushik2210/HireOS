@@ -12,7 +12,7 @@ Priority key: **Must** (MVP), **Should**, **Could**. Status is updated at each p
 | 6 | Job matching (Application Strength, breakdown, Job Intelligence page) | Must | Done (Supabase path unverified live; weights uncalibrated; LLM explanations Planned) |
 | 7 | Resume optimizer (tailoring, diff, versions, integrity verifier, cover letter) | Must | Done (selection and ordering only; AI rewriting Planned; Supabase path unverified live) |
 | 8 | Outreach assistant (drafts, LinkedIn copy-only assistant) | Should | Done (templated drafts, copy only; AI wording Planned; Supabase path unverified live) |
-| 9 | Application CRM (Kanban, transitions, events, follow-ups) | Must | Planned |
+| 9 | Application CRM (Kanban, transitions, events, follow-ups) | Must | Done (no drag and drop; Supabase path unverified live) |
 | 10 | Interview hub (prep, questions, Mock Interview Mode) | Should | Planned |
 | 11 | Career analytics (funnel, rates, "Why am I not getting interviews?", gap analyzer) | Should | Planned |
 | 12 | Career graph | Could | Planned |
@@ -75,3 +75,11 @@ Browser extension for user-initiated page capture, calendar integration for inte
 - A LinkedIn note is limited to 300 characters, which is LinkedIn's connection-note limit for most accounts as of writing; accounts with a different limit would need that constant changed (`LINKEDIN_NOTE_LIMIT`).
 - Drafts are hard-deleted (no soft delete or trash), and a draft keeps the wording it was written with even if the profile changes afterwards (a notice says so).
 - The Supabase outreach store and `outreach_drafts` through PostgREST have not run against a real project (SQL tested on PGlite, client calls against a fake). Verify write, edit, approve, mark sent and delete with two real accounts.
+- Every status is the person's own record. HireOS reads no email, polls no employer site and sees no replies, so a status is only as accurate as what the person enters. "Applied" means they applied themselves on the employer's page.
+- The board moves cards with a "Move to" menu that offers only the allowed next statuses, not by dragging. It works with a keyboard, a screen reader and a phone; drag and drop is Planned.
+- The follow-up engine is derived, not stored: an awaited application (applied, assessment or interview) is due after seven quiet days, or on the date the person set. The seven days is a constant (`DEFAULT_FOLLOW_UP_DAYS`), not yet a setting, and there are no reminders, emails or notifications: it appears on the board, the application page and the dashboard. The planned `followups` table was not needed.
+- The allowed moves (for example Rejected is final, Offer can only become Rejected or Withdrawn) are a first design. A real search may need others, such as reopening a rejection. The rule lives in one table that the app, the demo store and the database tests all check.
+- An application keeps its title, company and history when its job is deleted, but then has no link back to the job and cannot start a follow-up draft.
+- Contacts (`contacts` in the original data model) are not built: recruiter names live in notes and in outreach drafts. They would arrive with analytics if the data is worth structuring.
+- Sample applications are generated for each demo visitor from fixed definitions dated relative to now. They exist only in demo mode, are clearly labelled, and can be cleared with one button.
+- The Supabase application store, `change_application_status()` and the other functions through PostgREST have not run against a real project (SQL tested on PGlite, client calls against a fake). Verify tracking, moving, notes and delete with two real accounts.

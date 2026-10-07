@@ -5,7 +5,7 @@ PostgreSQL via Supabase. Versioned SQL migrations in `supabase/migrations` (the 
 ## Conventions
 - `id uuid primary key default gen_random_uuid()`; `created_at`, `updated_at` (trigger-maintained) on every table.
 - Every user-owned table has `user_id uuid not null references auth.users(id) on delete cascade`.
-- Soft delete (`deleted_at timestamptz`) on user-authored content that can be restored (applications, resumes, outreach). Hard delete on account deletion cascades everything.
+- Soft delete (`deleted_at timestamptz`) on user-authored content that can be restored (applications, resumes, outreach). Hard delete on account deletion cascades everything. In practice resumes, outreach drafts and applications are hard-deleted today; soft delete is Planned.
 - `is_demo boolean not null default false` on seedable tables so demo data can be wiped without touching real data.
 - Enums for closed sets (application status, work mode, job type); CHECK constraints for ranges (scores 0-100).
 - Indexes on every FK and on common filters (`user_id, status`, `user_id, created_at`).
@@ -26,9 +26,9 @@ PostgreSQL via Supabase. Versioned SQL migrations in `supabase/migrations` (the 
 | | `job_matches` | Per user x job: strength, sub-scores JSON with inputs, label, gaps, scorer version. |
 | Pipeline | `applications` | One per user x job; status enum, resume version, dates, follow-up date, outcome. |
 | | `application_events` | Append-only status/change log. |
-| | `contacts` | People tied to companies/applications. |
+| | `contacts` | Planned, not built: recruiter names live in notes and outreach drafts for now. |
 | | `outreach_drafts` | Copy-only drafts and the user's own sent records (type, channel, subject, body, claim refs, review state). Hard-deleted, not soft-deleted. |
-| | `followups` | Due dates and drafts for stale applications. |
+| | `followups` | Not needed: follow-ups are derived from application events and the follow-up date. |
 | Interviews | `interviews` | Rounds, dates, notes, prep checklist. |
 | | `interview_questions` | Generated/mock questions, answers, scores. |
 | Intelligence | `skill_gaps` | Per user x target: required vs have, severity, evidence job ids. |
@@ -74,6 +74,7 @@ Export (JSON of all user rows), delete resume/profile/applications, delete accou
 | `..09_job_matches` | `job_matches`: the last Application Strength saved per user and job, with RLS (own rows only) and a per-user cap |
 | `..10_document_versions` | `document_versions`: numbered tailored resumes and cover letters per user and job, immutable once saved, approvable only after a passing integrity check |
 | `..11_outreach_drafts` | `outreach_drafts`: copy-only email and LinkedIn drafts per user and job. Editable while a draft, frozen once approved, and the sent state is only the user's own record |
+| `..12_applications` | `application_transitions` (allowed moves), `applications`, `application_events` (append-only), and the functions `change_application_status()` and `add_application_event()` |
 
 Grants are explicit and least-privilege (`revoke all` from `anon`/`authenticated`, then grant what is needed), so correctness does not depend on Supabase default privileges.
 
@@ -129,3 +130,12 @@ Limits: it is not a Supabase stack. GoTrue, PostgREST, storage policies and exte
 - **Review states.** `draft` to `approved` to `sent`, never backwards, with CHECKs tying `approved_at` and `sent_at` to the state and requiring a passing integrity check for anything past `draft`. A trigger lets a draft be edited, freezes `body`, `subject` and `content` once approved (only the move to `sent` is allowed), and refuses any change to a sent draft. A draft cannot be marked sent without approval because both dates are required to be consistent with the state.
 - RLS: own rows only. Inserts must name the caller and a job the caller can see, and users cannot insert an already approved or sent row. Column grants allow updating only the words, the check and the review state, never the owner, job, type, channel or recipient. Deleting a job or account cascades, and a trigger caps each user at 300 drafts.
 - Tested with two users, every constraint, the state machine, the freeze and sent rules, cascades, and negative controls (removing the passing-check CHECK, or removing the sent-immutability rule, each fails a test).
+
+## Applications (Phase 9)
+- `applications`: one per user and job (a partial unique index), with the job's title and company copied so the record survives the job being deleted (`job_id` becomes null). `status` is one of eleven values; `applied_on` is required whenever the status means the person has applied; `follow_up_on`, `notes` (2,000 characters) and links to the person's own resume and cover letter versions are the only fields a user edits directly.
+- `application_transitions` holds the allowed moves as data. A test compares it, row for row, with the table the app uses, and walks every pair of statuses through the database function.
+- **Moves go through one function.** `change_application_status(id, status, note, date)` locks the row, checks the move against the table, updates the status (setting `applied_on` the first time the person reaches Applied) and writes the event in the same transaction. A trigger refuses every other change to `status` or `applied_on`, for every role including the service role, and users have no update grant on those columns at all.
+- `application_events` is append-only: a trigger refuses any update, users have no insert, update or delete grant, and rows leave only when their application is deleted. Events are written by the status function, by `add_application_event()` (which accepts only a note or "I followed up") and by a trigger that logs creation, follow-up date changes and document links. Constraints tie `from_status` and `to_status` to the kind of event.
+- RLS: own rows only, in both tables. A new application can only start as discovered, shortlisted, preparing or applied, for a job the user can see. Linking a document requires it to be the user's own, through the same ownership helper used by outreach and documents. Each user is capped at 500 applications.
+- The demo store is held to the database by a scripted parity test: the same random sequence of creates, moves, notes and date changes runs against both, and every status, date and event must match.
+- Tested with two users, every constraint, the full status matrix, the event log, cascades and the cap, plus negative controls (disabling the status guard, the document-ownership check or a transition row each fails a test).
