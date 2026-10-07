@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getDocumentStore } from "@/db/documents";
 import { getJobStore } from "@/db/jobs";
+import { getOutreachStore } from "@/db/outreach";
 import { JobStoreError } from "@/db/jobs/store";
 import { manualJobFormSchema } from "@/features/jobs/form";
 import { invalidResult, type ActionResult } from "@/lib/action-result";
@@ -74,8 +75,9 @@ export async function deleteJobAction(id: string): Promise<ActionResult> {
     const deleted = await (await getJobStore(user)).deletePrivate(user.id, parsed.data);
     if (!deleted)
       return { ok: false, error: "That job no longer exists, or is not yours to delete." };
-    // Saved resumes and letters for this job go with it (the database cascades; demo mode does it here).
+    // Saved resumes, letters and outreach drafts for this job go with it (the database cascades; demo mode does it here).
     await (await getDocumentStore(user)).removeForJob(user.id, parsed.data);
+    await (await getOutreachStore(user)).removeForJob(user.id, parsed.data);
   } catch {
     return { ok: false, error: "Could not delete the job. Please try again." };
   }
