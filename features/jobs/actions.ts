@@ -61,7 +61,6 @@ export async function addJobAction(input: unknown): Promise<ActionResult> {
     return { ok: false, error: "Could not save the job. Please try again." };
   }
 
-  revalidatePath("/jobs");
   redirect(`/jobs/${createdId}`);
 }
 

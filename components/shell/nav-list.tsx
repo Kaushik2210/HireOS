@@ -35,6 +35,8 @@ export function NavList({ onNavigate }: { onNavigate?: () => void }) {
             <li key={item.id}>
               <Link
                 href={item.href}
+                // Every page carries this sidebar; prefetching all of it floods the server.
+                prefetch={false}
                 aria-current={active ? "page" : undefined}
                 onClick={onNavigate}
                 className={cn(
