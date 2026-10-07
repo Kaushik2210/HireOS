@@ -70,6 +70,7 @@ Export (JSON of all user rows), delete resume/profile/applications, delete accou
 | `..05_profile_collections` | `education`, `experiences`, `projects`, `certifications`, `skills`, `achievements`; every row has `source` (`manual`/`resume`) and `confirmed` |
 | `..06_resumes` | `resumes`: file metadata, SHA-256, extracted text, `parsed` and `health` JSON; immutable; `storage_path` constrained to `{user_id}/{id}.ext` |
 | `..07_resume_storage` | Private `resumes` bucket (4 MB, PDF/DOCX only) and `storage.objects` policies: own folder only, exact `{uuid}/{uuid}.pdf|docx` names, no update |
+| `..08_jobs` | `job_sources` (reference rows), `companies`, `jobs`, the `search_jobs()` function, and the private-job limit trigger |
 
 Grants are explicit and least-privilege (`revoke all` from `anon`/`authenticated`, then grant what is needed), so correctness does not depend on Supabase default privileges.
 
@@ -92,3 +93,15 @@ Limits: it is not a Supabase stack. GoTrue, PostgREST, storage policies and exte
 - `UNIQUE (user_id, sha256)` recognises a re-upload of the same file for one user without blocking two users who happen to upload identical files.
 - `parsed` holds the parser output (already valid profile items, re-validated with Zod on read) and `health` the scored breakdown. `parser_version` allows re-parsing later.
 - Storage policies are tested on the PGlite shim, which now includes a minimal `storage` schema (`buckets`, `objects` with RLS, `foldername()`).
+
+## Jobs (Phase 5)
+- `jobs.owner_user_id` is null for the **shared catalogue** (written only by the service role) or a user's id for a job they pasted in themselves (private to them). A CHECK forces private jobs to be `source_key = 'manual'` and never demo data.
+- RLS: everyone signed in can read shared jobs plus their own. Users may insert only their own manual jobs, and delete only their own. There is no update policy; shared rows are read-only for users. `companies` and `job_sources` are read-only for users.
+- Duplicate protection by partial unique indexes on `fingerprint`: one shared posting per fingerprint, and one per owner for private jobs. The fingerprint (company + title + location after cleaning, see `lib/jobs/keys.ts`) is how the same posting from two sources becomes one row; the other listing is kept in `also_listed_on`.
+- A trigger caps each user at 100 private jobs regardless of what the application does.
+- Salary is stored as `salary_min`/`salary_max` plus a currency and period, with checks that the range is ordered and that a currency is present whenever pay is.
+- `search_jobs()` runs with the caller's rights (`security invoker`), so RLS decides what appears. A query matches when every word appears (case-insensitively) in the title, company, location, skills or description. Filters, sorting (`newest`, `oldest`, `title`) and paging happen in one call, with a clamped page size. Search text is bound as a parameter and compared with `strpos`, never as a pattern, so `%`, `_` and quotes are plain characters. There is deliberately no salary sort: it would compare amounts across currencies.
+- `supabase/seed.sql` is generated from the same demo dataset by `npm run seed:generate`, with deterministic ids so reseeding is a no-op. A test fails if the committed file differs from what the generator produces. Production never loads it, so production has no demo jobs.
+- The in-memory demo store and `search_jobs()` are held to identical results by a parity suite that runs the same 26 queries against both (on PGlite for SQL).
+- Embeddings (`pgvector`) are not added yet. Nothing consumes them until matching, and they will only ever augment retrieval, never the score.
+- "Hide demo jobs" for real accounts is a per-user flag in `users.settings` (`hide_demo_jobs`). It filters the shared rows out of that user's search; it never deletes shared data.

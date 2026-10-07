@@ -57,6 +57,14 @@ Uploads are untrusted input and are treated as hostile until proven otherwise.
 
 Known limits: parsing runs in the request process (bounded, but a pathological file can still use CPU for up to the timeout; a worker or separate service is the next step); there is no antivirus scan; multipart bodies are buffered by the platform before the handler sees them, so Content-Length is checked first but a chunked body without one is bounded only by the platform limit; scanned or image-only PDFs are detected as unreadable, and there is no OCR.
 
+## Implemented in Phase 5 (jobs)
+- **Job text is untrusted data.** Markup is stripped before storage, script and style bodies are dropped, control characters (NUL, which Postgres cannot hold, and others) are removed from every field, and the result is only ever rendered as text by React, never as HTML. Tests run scripts, event-handler images, double-escaped markup and instruction-like text through the full path and in the browser, and assert nothing executes.
+- **Links.** Apply links are canonicalised to plain http(s) with credentials, fragments and tracking parameters removed; `javascript:`, `data:` and other schemes never become an `href`, and the database re-checks the same rule. External links open with `rel="noopener noreferrer"`. Demo links use the reserved `.example` TLD and cannot reach a real site.
+- **No fetching.** Nothing in the app fetches a URL on a user's behalf: jobs are added by pasting text. That removes server-side request forgery from this feature entirely.
+- **Search input.** Filters come from the URL through a parser that never throws and ignores each invalid value on its own, strips control characters, and bounds length. Text is passed to SQL as a bound parameter and compared with `strpos`, so it cannot act as a pattern or as SQL. Page size is clamped in the database function.
+- **Row Level Security.** Shared jobs are readable by any signed-in user and read-only for them; private jobs are visible and deletable only by their owner; companies and sources are read-only. A CHECK ties private jobs to the manual source, a trigger caps them at 100 per user, and column-level grants stop clients setting `is_demo`, `company_id` or the history fields. All covered by two-user tests, plus a negative control that broke the policies and was caught.
+- **Honest sourcing.** No third-party job feed is enabled; see ROADMAP.md.
+
 ## User data controls
 View, edit, export (JSON), delete resume/profile/applications, wipe demo data, delete account (cascade + storage purge).
 

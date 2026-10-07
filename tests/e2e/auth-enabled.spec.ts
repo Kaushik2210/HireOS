@@ -107,3 +107,10 @@ test("the resume pages are protected", async ({ page }) => {
   await page.goto("/resume");
   await expect(page).toHaveURL(/\/login\?next=%2Fresume$/);
 });
+
+test("the jobs pages are protected", async ({ page }) => {
+  await page.goto("/jobs");
+  await expect(page).toHaveURL(/\/login\?next=%2Fjobs$/);
+  await page.goto("/jobs/11111111-1111-4111-8111-111111111111");
+  await expect(page).toHaveURL(/\/login\?next=/);
+});

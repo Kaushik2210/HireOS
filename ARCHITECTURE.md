@@ -63,6 +63,14 @@ Dependency direction: `app -> features -> services -> (db, ai)`. `services` neve
 
 Importing parsed items is a separate, explicit step: items enter the profile as `source = 'resume'`, `confirmed = false` and stay out of every verified view until the user confirms them.
 
+## Job pipeline
+- **Providers.** A `JobProvider` maps a source's records to a loose `RawJob`; everything after that is shared. Each provider states its `termsNote`: the basis on which fetching is permitted. Only two bundled demo providers exist. No third-party feed is enabled (see ROADMAP.md for why).
+- **Normalisation** (`services/jobs/normalize.ts`) runs in a fixed order: strip markup from the description (including the double-escaped form some feeds send), analyse the cleaned text, let provider-supplied fields override analysis, canonicalise the apply link (http/https only, tracking parameters removed), strip control characters, validate with Zod. A record that fails validation is rejected, never repaired.
+- **Analysis** (`services/jobs/analyze.ts`) is deterministic and offline: it splits a posting into responsibilities, requirements and nice-to-haves, extracts required and preferred skills with the same catalogue used for resumes, and reads years of experience, seniority, work mode, job type and salary. It only reports what the text says.
+- **De-duplication** (`services/jobs/ingest.ts`) merges listings by fingerprint or identical canonical apply link. The first-seen record stays primary and only gains what it lacked; the other listing is remembered in `also_listed_on`.
+- **Stores.** `JobStore` has an in-memory implementation for demo mode (each visitor gets a bounded private sandbox over a shared read-only catalogue) and a Supabase one built on `search_jobs()` and the user-scoped client.
+- **Adding a job by hand** goes through exactly the same normalisation, then is stored as a private manual job. Nothing is fetched from any website.
+
 ## Cross-cutting
 - **Config**: typed env loader; the app boots with no keys (demo mode), features degrade to explicit "configure" states.
 - **Errors**: typed `Result`/error classes; no raw error text to clients; no PII in logs.

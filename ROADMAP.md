@@ -8,7 +8,7 @@ Priority key: **Must** (MVP), **Should**, **Could**. Status is updated at each p
 | 2 | Authentication (Supabase Auth, protected routes, session expiry) | Must | Done (live round-trip unverified, see known issues) |
 | 3 | Candidate profile (profile, skills, projects, certs, experience, preferences) | Must | Done (Supabase path unverified live) |
 | 4 | Resume upload and parser (secure upload, extraction, Resume Health) | Must | Done (Supabase storage path unverified live; LLM-assisted parsing Planned) |
-| 5 | Job database and providers (JobProvider, demo provider, dedupe, demo dataset) | Must | Planned |
+| 5 | Job database and providers (JobProvider, demo provider, dedupe, demo dataset) | Must | Done (no real provider by design; Supabase path unverified live) |
 | 6 | Job matching (Application Strength, breakdown, Job Intelligence page) | Must | Planned |
 | 7 | Resume optimizer (tailoring, diff, versions, integrity verifier, cover letter) | Must | Planned |
 | 8 | Outreach assistant (drafts, LinkedIn copy-only assistant) | Should | Planned |
@@ -48,3 +48,10 @@ Browser extension for user-initiated page capture, calendar integration for inte
 - Resume Health scoring weights and thresholds are initial values and have not been calibrated against real resumes. Keyword coverage is general breadth only; job-specific coverage arrives with matching (Phase 6).
 - Resume files are parsed in the request process. Move to a background job or isolated worker with the Inngest work in a later phase if volume warrants.
 - Download is unavailable in demo mode because originals are discarded.
+- **No real job provider is enabled, on purpose.** Before adding one I read Greenhouse's Job Board API documentation: it describes giving a company access to "your company's" offices, departments and jobs, to build that company's own careers page. It does not grant reuse by a third-party aggregator, so enabling it for other companies' boards would rest on an assumption rather than a stated permission. Lever and Ashby have the same shape. A real source should be added only when its terms clearly allow it (a licensed or partner feed, an API that explicitly permits aggregation, or a company that points its own board at HireOS), one at a time, with the basis recorded in its `termsNote`. Until then, real discovery is the "add a job" paste flow.
+- The job provider framework, normalisation and dedupe are exercised by two fictional demo sources. The adapter surface for a real source is small: map its records to `RawJob`.
+- Job analysis is heuristic. It reads conventionally written postings well (headed sections, bullets) and degrades to fewer extracted fields on prose-only or unusual ones; it never invents values. It cannot tell from text alone that "Go" in a sentence is the language, so very short skill names are only recognised in list contexts.
+- Search is whole-word-fragment matching over title, company, location, skills and description, not full-text search with ranking or stemming ("engineers" does not match "engineer"). Fine at catalogue sizes in the thousands; move to Postgres full-text or trigram indexes when it grows. Title sort uses the database's collation, which may order punctuation differently from the demo store on a real Supabase instance.
+- Pay is shown per posting in its own currency. There is no currency conversion and no salary sort.
+- The Supabase job store and `search_jobs()` through PostgREST have not been exercised against a real project (the SQL is tested on PGlite and the client calls against a fake). Verify search, add, delete and the hide-demo flag with two real accounts, and load `supabase/seed.sql` to see demo jobs.
+- Ingestion has no scheduler yet: shared catalogue rows come only from `supabase/seed.sql` (demo) today. A refresh job (Inngest) arrives with the first real provider.
