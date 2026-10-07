@@ -65,6 +65,14 @@ Known limits: parsing runs in the request process (bounded, but a pathological f
 - **Row Level Security.** Shared jobs are readable by any signed-in user and read-only for them; private jobs are visible and deletable only by their owner; companies and sources are read-only. A CHECK ties private jobs to the manual source, a trigger caps them at 100 per user, and column-level grants stop clients setting `is_demo`, `company_id` or the history fields. All covered by two-user tests, plus a negative control that broke the policies and was caught.
 - **Honest sourcing.** No third-party job feed is enabled; see ROADMAP.md.
 
+## Implemented in Phase 6 (matching)
+- **Job text stays data.** The scorer reads parsed fields (skills, years, level, location) and never executes or follows text from a posting. Generated explanations are templates over those fields, so instruction-like text in a description cannot reach a result (tested: an injected posting scores identically to a clean one and appears nowhere in the output).
+- **No unsupported claims.** Only confirmed profile items are scored or cited, and a test checks that every cited `source_ref` is a real verified item. Missing requirements are stated as missing, never papered over.
+- **No outcome predictions.** Wording is checked by test: nothing says probability, chance, odds, guarantee or that anyone will be hired or interviewed.
+- **Row Level Security** on `job_matches`: own rows only, inserts must reference a visible job, column grants stop re-parenting rows, and a negative control proved the isolation test fails when the policy is loosened.
+- **Stored results are re-validated** with the same Zod schema on read; a row that no longer fits is treated as absent.
+- **Bounded work.** Ranking is capped at 500 jobs per request and saved matches at 2000 per user.
+
 ## User data controls
 View, edit, export (JSON), delete resume/profile/applications, wipe demo data, delete account (cascade + storage purge).
 

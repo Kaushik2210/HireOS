@@ -71,6 +71,14 @@ Importing parsed items is a separate, explicit step: items enter the profile as 
 - **Stores.** `JobStore` has an in-memory implementation for demo mode (each visitor gets a bounded private sandbox over a shared read-only catalogue) and a Supabase one built on `search_jobs()` and the user-scoped client.
 - **Adding a job by hand** goes through exactly the same normalisation, then is stored as a private manual job. Nothing is fetched from any website.
 
+## Matching pipeline
+- **Candidate** (`services/matching/candidate.ts`): turns a profile snapshot into scoring inputs from verified items only (skills map with level and where each is used, projects, merged experience months, degrees, preferences, target roles) plus a hash of exactly those inputs.
+- **Requirements** (`services/matching/requirements.ts`): reads the education and experience a job asks for from its stored fields and text.
+- **Components and score** (`components.ts`, `score.ts`): seven pure functions and a combiner. No I/O, no clock beyond the `now` passed in, no randomness.
+- **Ranking** (`rank.ts`): lists the jobs a user can see page by page from the job store (capped at 500), scores each, and sorts by strength with stable tie-breaks.
+- **Stores.** `MatchStore` has an in-memory demo implementation and a Supabase one on the user-scoped client; both save a snapshot per user and job.
+- **Pages.** `/jobs/[id]` shows Job Intelligence (live-scored, then snapshot saved if the profile hash or scorer version changed); `/matches` ranks everything with a band filter and paging; job cards and the dashboard's Top opportunities panel show strength. If scoring fails the rest of each page still renders.
+
 ## Cross-cutting
 - **Config**: typed env loader; the app boots with no keys (demo mode), features degrade to explicit "configure" states.
 - **Errors**: typed `Result`/error classes; no raw error text to clients; no PII in logs.

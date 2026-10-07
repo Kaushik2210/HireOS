@@ -9,7 +9,7 @@ Priority key: **Must** (MVP), **Should**, **Could**. Status is updated at each p
 | 3 | Candidate profile (profile, skills, projects, certs, experience, preferences) | Must | Done (Supabase path unverified live) |
 | 4 | Resume upload and parser (secure upload, extraction, Resume Health) | Must | Done (Supabase storage path unverified live; LLM-assisted parsing Planned) |
 | 5 | Job database and providers (JobProvider, demo provider, dedupe, demo dataset) | Must | Done (no real provider by design; Supabase path unverified live) |
-| 6 | Job matching (Application Strength, breakdown, Job Intelligence page) | Must | Planned |
+| 6 | Job matching (Application Strength, breakdown, Job Intelligence page) | Must | Done (Supabase path unverified live; weights uncalibrated; LLM explanations Planned) |
 | 7 | Resume optimizer (tailoring, diff, versions, integrity verifier, cover letter) | Must | Planned |
 | 8 | Outreach assistant (drafts, LinkedIn copy-only assistant) | Should | Planned |
 | 9 | Application CRM (Kanban, transitions, events, follow-ups) | Must | Planned |
@@ -45,7 +45,7 @@ Browser extension for user-initiated page capture, calendar integration for inte
 - The Supabase resume store and storage bucket are tested against a fake client (call shape, cleanup on failure) and, for the schema, constraints and storage policies, on PGlite. They have not run against a real Supabase project. Verify: upload, signed-URL download, delete (file and row), and cross-account isolation with two real accounts.
 - The resume parser is heuristic. It handles the common layouts well (classic, pipe-separated, wrapped lines) but will misread unusual ones, such as multi-column designs, graphics-heavy templates and non-English resumes. It flags uncertainty and drops what it cannot read; all imported items need user review. An LLM-assisted fallback is Planned for after the `LLMProvider` interface exists.
 - No OCR: image-only PDFs are reported as unreadable.
-- Resume Health scoring weights and thresholds are initial values and have not been calibrated against real resumes. Keyword coverage is general breadth only; job-specific coverage arrives with matching (Phase 6).
+- Resume Health scoring weights and thresholds are initial values and have not been calibrated against real resumes. Resume Health keyword coverage is general breadth only; job-specific keyword coverage is part of Application Strength.
 - Resume files are parsed in the request process. Move to a background job or isolated worker with the Inngest work in a later phase if volume warrants.
 - Download is unavailable in demo mode because originals are discarded.
 - **No real job provider is enabled, on purpose.** Before adding one I read Greenhouse's Job Board API documentation: it describes giving a company access to "your company's" offices, departments and jobs, to build that company's own careers page. It does not grant reuse by a third-party aggregator, so enabling it for other companies' boards would rest on an assumption rather than a stated permission. Lever and Ashby have the same shape. A real source should be added only when its terms clearly allow it (a licensed or partner feed, an API that explicitly permits aggregation, or a company that points its own board at HireOS), one at a time, with the basis recorded in its `termsNote`. Until then, real discovery is the "add a job" paste flow.
@@ -55,3 +55,9 @@ Browser extension for user-initiated page capture, calendar integration for inte
 - Pay is shown per posting in its own currency. There is no currency conversion and no salary sort.
 - The Supabase job store and `search_jobs()` through PostgREST have not been exercised against a real project (the SQL is tested on PGlite and the client calls against a fake). Verify search, add, delete and the hide-demo flag with two real accounts, and load `supabase/seed.sql` to see demo jobs.
 - Ingestion has no scheduler yet: shared catalogue rows come only from `supabase/seed.sql` (demo) today. A refresh job (Inngest) arrives with the first real provider.
+- Application Strength weights (30/15/15/10/10/10/10), the label thresholds (80/65/45) and the skills cap (below 40% of at least three required skills limits the total to 54) are reasoned starting values. They have not been calibrated against real outcomes and will change with evidence, which is why every result carries `scorer_version`.
+- Skill matching is by canonical name and alias only. A related skill (for example Flask for Django) is never credited; it only appears as a suggestion on the gap. Level credit is a fixed table, not a measurement.
+- Education requirements are read from the posting's text with patterns, so unusual phrasing may be missed (the education component is then left out rather than guessed). Experience is the sum of verified work and internship ranges with overlaps merged; leadership and volunteering do not count as years.
+- Scoring is live: `/matches` and the dashboard score every visible job on each load (capped at 500). That is cheap at demo scale. A saved snapshot (`job_matches`) is written when a job page is opened and its profile hash or scorer version changed; nothing reads it for ranking yet.
+- The Supabase match store and `job_matches` through PostgREST have not run against a real project (SQL tested on PGlite, client calls against a fake). Verify save and read with two real accounts.
+- Explanations are built from templates over stored evidence. LLM-written explanations are Planned and will only reword evidence the scorer already produced.

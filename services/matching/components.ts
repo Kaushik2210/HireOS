@@ -318,7 +318,7 @@ export function experienceComponent(job: Job, c: Candidate): Part {
     gaps.push({
       kind: "experience",
       severity: ratio < 0.34 ? "high" : ratio < 0.67 ? "medium" : "low",
-      text: `The job asks for about ${req.years} ${req.years === 1 ? "year" : "years"}; your verified roles add up to about ${years.toFixed(1)}.`,
+      text: `The job asks for about ${req.years} ${req.years === 1 ? "year" : "years"}; your verified roles add up to about ${years.toFixed(1)} years.`,
       suggestion:
         "Internships and projects can partly offset this, but the posting may still screen on years.",
     });

@@ -71,6 +71,7 @@ Export (JSON of all user rows), delete resume/profile/applications, delete accou
 | `..06_resumes` | `resumes`: file metadata, SHA-256, extracted text, `parsed` and `health` JSON; immutable; `storage_path` constrained to `{user_id}/{id}.ext` |
 | `..07_resume_storage` | Private `resumes` bucket (4 MB, PDF/DOCX only) and `storage.objects` policies: own folder only, exact `{uuid}/{uuid}.pdf|docx` names, no update |
 | `..08_jobs` | `job_sources` (reference rows), `companies`, `jobs`, the `search_jobs()` function, and the private-job limit trigger |
+| `..09_job_matches` | `job_matches`: the last Application Strength saved per user and job, with RLS (own rows only) and a per-user cap |
 
 Grants are explicit and least-privilege (`revoke all` from `anon`/`authenticated`, then grant what is needed), so correctness does not depend on Supabase default privileges.
 
@@ -105,3 +106,9 @@ Limits: it is not a Supabase stack. GoTrue, PostgREST, storage policies and exte
 - The in-memory demo store and `search_jobs()` are held to identical results by a parity suite that runs the same 26 queries against both (on PGlite for SQL).
 - Embeddings (`pgvector`) are not added yet. Nothing consumes them until matching, and they will only ever augment retrieval, never the score.
 - "Hide demo jobs" for real accounts is a per-user flag in `users.settings` (`hide_demo_jobs`). It filters the shared rows out of that user's search; it never deletes shared data.
+
+## Job matches (Phase 6)
+- `job_matches` holds one row per user and job (`unique (user_id, job_id)`): `scorer_version`, `strength` (0-100), `label` (`strong`/`good`/`stretch`/`low`), the full breakdown as JSON (`components` is checked to be an array of exactly seven, `why`, `gaps`, `keywords`, `concerns`, `cap`, `action`), the `profile_hash` it was computed from, and `computed_at`.
+- The score is a pure function of a job and the verified profile, so this table is a snapshot, not a source of truth. `profile_hash` (SHA-256 of the scoring inputs) and `scorer_version` tell the app when a snapshot is stale.
+- RLS: a user reads, refreshes and deletes only their own rows. Inserts must name themselves and a job they can see (the policy checks visibility through `jobs` RLS, so another user's private job cannot be referenced). Column grants stop a client moving a row to another user or job. Deleting a job or an account cascades. A trigger caps each user at 2000 rows.
+- Tested with two users, constraint cases, cascade, and a negative control (loosening the select policy fails the isolation test).

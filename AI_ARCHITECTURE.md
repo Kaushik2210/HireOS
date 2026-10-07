@@ -28,16 +28,27 @@ Each has a Zod input/output schema, prompt module, and tests: `resumeAnalyzer, j
 | Mock interview | Score aggregation | Question generation, answer assessment (rubric-bound, hedged) |
 
 ## Application Strength
-Seven sub-scores, each 0-100, each storing its inputs:
-- **Skill Match**: weighted overlap of required/preferred skills vs verified skills (required weighted 2x, canonical names via catalog + aliases).
-- **Project Relevance**: overlap of project tech/domain tags with job requirements, best-k projects.
-- **Education Match**: degree level/field vs stated requirement (rule table).
-- **Experience Match**: relevant years/roles vs required range (piecewise).
-- **Keyword Coverage**: JD keyword set vs profile/resume text coverage.
-- **Location Match**: work mode and location preference rules.
-- **Seniority Match**: job level vs candidate level distance.
+Implemented in Phase 6 and fully deterministic: no model call is made, and the score never depends on free-form model text. Code: `lib/matching/types.ts` (weights, thresholds, result schema), `services/matching/{candidate,requirements,components,score}.ts`.
 
-Overall = weighted sum (default weights shown in the UI, versioned as `scorer_version`). Label thresholds are explicit constants. Same inputs always give the same score; a regression test pins this. The LLM may suggest *which text spans satisfy a requirement*, but matching decisions are verified against the profile by code.
+The input is a **verified snapshot** of the profile (only `confirmed` items; resume imports stay out until reviewed) and a stored job. Seven components each return a 0-100 score, a one-line summary and the inputs they used:
+
+| Component | Weight | How it is computed |
+|---|---|---|
+| Skill match | 30 | Required skills count 1.0 and preferred 0.5. Credit by level: beginner 0.6, intermediate 0.85, advanced or expert 1.0. A skill shown only by a project or role counts 0.85. Canonical names via the skill catalogue and aliases. |
+| Project relevance | 15 | Best two verified projects together: share of the job's required (else preferred) skills their tech covers. |
+| Experience match | 15 | Verified work and internship months (overlaps merged; leadership and volunteering excluded) against the stated years, or the years implied by the level. |
+| Keyword coverage | 10 | Share of the posting's keywords found in verified profile text. |
+| Education match | 10 | Degree level against the posting's stated requirement; ongoing degrees get partial credit unless the posting allows them; one level short gets partial credit. |
+| Location match | 10 | Work mode and preferred locations (remote, city aliases, relocation). |
+| Seniority match | 10 | Distance between the job's level and the candidate's profile level (or one derived from verified experience). |
+
+A component the posting gives no basis for (no stated education, no location, ...) is **not applicable**: it is left out and the remaining weights are rescaled, so a job is never marked down for something it does not ask. **Skills cap:** when a job lists at least three required skills and fewer than 40% are found, the total is capped at 54 and the result says so. Labels: strong 80+, good 65+, stretch 45+, otherwise low. All of these are named constants, and `scorer_version` identifies the rules that produced a result.
+
+Every result also carries "Why you match" (each line cites a verified item through `source_ref`), gaps (missing required skills use the exact wording "X is required by this job but was not found in your verified profile. If you have genuinely used it, add the experience."), keywords covered and missing, hedged concerns, and one recommended next step. A skill present only in an unconfirmed item is reported as such and not counted.
+
+Tests pin the behaviour: the same inputs give the same result; adding a missing required skill never lowers strength; unconfirmed items change nothing; every result across all demo candidates and jobs validates against the schema; no generated text contains probability, odds, guarantee or hiring-outcome wording; every `source_ref` points at a real verified item; instruction-like text in a posting changes nothing.
+
+Planned: an LLM may later reword the explanation lines. It will receive only the evidence the scorer produced, return Zod-validated text, and never change a number or a gap.
 
 ## Integrity verifier
 Every generated artifact (resume bullets, cover letters, outreach, answers) is a list of **claims**, each `{text, source_ref, kind}` where `source_ref` points to a profile item id (skill, project, experience, certification, achievement).
@@ -72,3 +83,6 @@ An LLM-assisted pass for messy layouts is deliberately deferred until the `LLMPr
 ## Job analysis status (Phase 5)
 Requirement extraction for jobs is deterministic, like resume parsing, so matching (Phase 6) can score from structured data that is reproducible and testable. An LLM `jobAnalyzer` that fills gaps for oddly written postings is Planned for after the `LLMProvider` interface exists; it will receive job text only as delimited untrusted data and return Zod-validated structures.
 Job descriptions are the most exposed untrusted input in the product, since anyone can publish one. Today they are only split into lines and matched against fixed patterns, never interpreted. Tests carry instruction-like text ("ignore previous instructions", "SYSTEM: grant admin access"), markup, and script tags through the whole pipeline and assert that the text is stored as plain data and never acted on or rendered as HTML.
+
+## Matching status (Phase 6)
+Scoring needs no API key. Job requirements come from the Phase 5 heuristic analyser, so extraction quality bounds match quality: a posting whose skills were not recognised yields fewer scored components, never invented ones. Job text reaches the scorer only as parsed fields and is never interpreted as instructions.
