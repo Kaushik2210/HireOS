@@ -19,7 +19,7 @@ import {
 } from "@/services/resume/extract-entries";
 import { extractContact } from "@/services/resume/extract-contact";
 import { extractSkills } from "@/services/resume/extract-skills";
-import { normalizeText } from "@/services/resume/normalize";
+import { normalizeText } from "@/lib/text/normalize";
 import { detectSections, linesOf } from "@/services/resume/sections";
 
 export interface ParseInput {

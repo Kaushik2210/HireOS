@@ -18,14 +18,7 @@ import {
   type CollectionItem,
 } from "@/lib/profile/schemas";
 import type { z } from "zod";
-
-export type FieldDef = { name: string; label: string; hint?: string; placeholder?: string } & (
-  | { kind: "text" | "url" | "month" | "number" | "checkbox" }
-  | { kind: "textarea"; rows?: number }
-  | { kind: "select"; options: readonly { value: string; label: string }[]; allowEmpty?: boolean }
-  | { kind: "checkboxes"; options: readonly { value: string; label: string }[] }
-  | { kind: "list"; mode: "lines" | "commas" }
-);
+import type { FieldDef } from "@/components/forms/field-types";
 
 const options = (values: readonly string[], labels?: Record<string, string>) =>
   values.map((value) => ({ value, label: labels?.[value] ?? label(value) }));

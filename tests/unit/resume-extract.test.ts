@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { MAX_PDF_PAGES } from "@/lib/resume/constants";
 import { ExtractError, extractRawText, wordXmlToText } from "@/services/resume/extract-text";
-import { normalizeText } from "@/services/resume/normalize";
+import { normalizeText } from "@/lib/text/normalize";
 import { parseResumeText } from "@/services/resume/parse";
 import { CLASSIC, PIPE_STYLE } from "../fixtures/resume-texts";
 import { makeDocx, makePdf } from "../fixtures/files";

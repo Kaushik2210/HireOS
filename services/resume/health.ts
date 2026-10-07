@@ -1,5 +1,5 @@
 import type { HealthCheck, HealthGroup, ParsedResume, ResumeHealth } from "@/lib/resume/schemas";
-import { scanCatalogSkills } from "@/services/resume/extract-skills";
+import { scanCatalogSkills } from "@/lib/skills/scan";
 
 const clamp01 = (n: number) => Math.min(Math.max(n, 0), 1);
 const share = (part: number, whole: number) => (whole === 0 ? 0 : part / whole);

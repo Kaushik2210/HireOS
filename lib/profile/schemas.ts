@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { list, requiredText, text, url } from "@/lib/schema-helpers";
 import {
   ACHIEVEMENT_CATEGORIES,
   EXPERIENCE_KINDS,
@@ -13,30 +14,6 @@ import {
 } from "@/lib/profile/constants";
 
 /* ---------- field helpers ---------- */
-
-/** Optional text: trims, turns blank into null, caps length. */
-const text = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max, `Use at most ${max} characters`)
-    .nullish()
-    .transform((v) => (v ? v : null));
-
-const requiredText = (label: string, max: number) =>
-  z.string().trim().min(1, `Enter ${label}`).max(max, `Use at most ${max} characters`);
-
-/** Only http(s) links; blocks javascript: and data: URLs that could be rendered as hrefs. */
-const url = z
-  .string()
-  .trim()
-  .max(500, "Use at most 500 characters")
-  .nullish()
-  .transform((v) => (v ? v : null))
-  .refine(
-    (v) => v === null || /^https?:\/\/[^\s]+$/i.test(v),
-    "Enter a link starting with http:// or https://",
-  );
 
 /** A calendar month as YYYY-MM. Stored in the database as the first day of that month. */
 const month = z
@@ -53,15 +30,6 @@ function currentMonth(plusMonths = 0): string {
   d.setMonth(d.getMonth() + plusMonths);
   return d.toISOString().slice(0, 7);
 }
-
-const list = (maxItems: number, maxLength: number) =>
-  z
-    .array(
-      z.string().trim().min(1).max(maxLength, `Each entry can be at most ${maxLength} characters`),
-    )
-    .max(maxItems, `Add at most ${maxItems} entries`)
-    .default([])
-    .transform((items) => [...new Set(items)]);
 
 const highlights = list(MAX_HIGHLIGHTS, 300);
 const tags = list(MAX_TAGS, 50);

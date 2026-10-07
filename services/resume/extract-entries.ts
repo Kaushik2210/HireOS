@@ -8,7 +8,7 @@ import {
   type Block,
 } from "@/services/resume/blocks";
 import { findDateSpan, stripSpan, type DateSpan } from "@/services/resume/dates";
-import { scanCatalogSkills } from "@/services/resume/extract-skills";
+import { scanCatalogSkills } from "@/lib/skills/scan";
 
 /* Drafts are plain objects; the parser validates each one against the real profile schemas. */
 export interface EducationDraft {

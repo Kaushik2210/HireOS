@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { SingletonRecord } from "@/db/profile/store";
 import { saveGoalsAction, saveProfileAction } from "@/features/profile/actions";
-import { EntityDialog } from "@/features/profile/components/entity-dialog";
-import { EntityForm, toFormValues } from "@/features/profile/components/entity-form";
+import { EntityDialog } from "@/components/forms/entity-dialog";
+import { EntityForm, toFormValues } from "@/components/forms/entity-form";
 import { GOALS_FORM, PROFILE_FORM } from "@/features/profile/config";
 import { formatSalary, label } from "@/features/profile/format";
 
