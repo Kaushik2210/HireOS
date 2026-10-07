@@ -11,6 +11,11 @@ test("protected pages redirect signed-out visitors to login and remember the des
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 });
 
+test("the matches page is protected", async ({ page }) => {
+  await page.goto("/matches");
+  await expect(page).toHaveURL(/\/login\?next=%2Fmatches$/);
+});
+
 test("the root path goes to login without a next parameter", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);

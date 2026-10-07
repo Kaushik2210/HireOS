@@ -1,12 +1,18 @@
-import { Activity, BarChart3, Briefcase, Lightbulb, ListChecks } from "lucide-react";
+import { Activity, BarChart3, Lightbulb, ListChecks } from "lucide-react";
 import type { Metadata } from "next";
 import { EmptyState } from "@/components/states/empty-state";
 import { Badge, PlannedBadge } from "@/components/ui/badge";
 import Link from "next/link";
+import { getJobStore } from "@/db/jobs";
 import { getProfileStore } from "@/db/profile";
+import { TopOpportunities } from "@/features/matching/components/top-opportunities";
+import { loadMatchContext } from "@/features/matching/load";
 import { CompletenessCard } from "@/features/profile/components/completeness-card";
 import { requireUser } from "@/lib/auth/session";
 import { getCapabilities } from "@/lib/env";
+import { canScore } from "@/services/matching/score";
+import { listVisibleJobs, rankJobs, type RankedJob } from "@/services/matching/rank";
+import type { Candidate } from "@/services/matching/candidate";
 import { computeCompleteness, type Completeness } from "@/services/profile/completeness";
 import { pendingCount } from "@/services/profile/verified";
 
@@ -27,12 +33,6 @@ const PLANNED_PANELS = [
     description: "Applications by stage, from discovered to offer.",
     icon: BarChart3,
     phase: 9,
-  },
-  {
-    title: "Top opportunities",
-    description: "Highest Application Strength jobs with skill match and missing skills.",
-    icon: Briefcase,
-    phase: 6,
   },
   {
     title: "Today's actions",
@@ -79,6 +79,22 @@ export default async function DashboardPage() {
     pending = pendingCount(snapshot);
   } catch {
     completeness = null; // shown as an inline error below; the rest of the page still works
+  }
+
+  let candidate: Candidate | null = null;
+  let ranked: RankedJob[] = [];
+  let matchPending = 0;
+  let matchesFailed = false;
+  try {
+    const context = await loadMatchContext(user);
+    candidate = context.candidate;
+    matchPending = context.pending;
+    if (canScore(candidate)) {
+      const jobs = await listVisibleJobs(await getJobStore(user), user.id);
+      ranked = rankJobs(jobs, candidate);
+    }
+  } catch {
+    matchesFailed = true;
   }
 
   return (
@@ -152,6 +168,25 @@ export default async function DashboardPage() {
             Running without a data backend. Demo data arrives with the jobs phase; AI features stay
             disabled until an API key is set.
           </p>
+        )}
+      </section>
+
+      <section
+        aria-labelledby="top-opportunities"
+        className="border-border bg-surface rounded-lg border p-4"
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 id="top-opportunities" className="text-sm font-medium">
+            Top opportunities
+          </h2>
+          {user.isDemo && <Badge variant="accent">Demo data</Badge>}
+        </div>
+        {matchesFailed ? (
+          <p role="alert" className="text-danger text-sm">
+            Could not rank jobs right now. Reload to try again.
+          </p>
+        ) : (
+          <TopOpportunities ranked={ranked} candidate={candidate} pending={matchPending} />
         )}
       </section>
 

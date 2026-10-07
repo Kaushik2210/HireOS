@@ -6,11 +6,19 @@ import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getJobStore } from "@/db/jobs";
+import { getMatchStore } from "@/db/matching";
+import {
+  BuildProfilePrompt,
+  JobIntelligence,
+} from "@/features/matching/components/job-intelligence";
+import { loadMatchContext } from "@/features/matching/load";
 import { DeleteJobButton } from "@/features/jobs/components/job-controls";
 import { formatJobPay, formatPostedDate, sourceLabel } from "@/features/jobs/format";
 import { label } from "@/features/profile/format";
 import { requireUser } from "@/lib/auth/session";
 import type { Job } from "@/lib/jobs/schemas";
+import type { MatchResult } from "@/lib/matching/types";
+import { canScore, scoreJob } from "@/services/matching/score";
 
 export const metadata: Metadata = { title: "Job" };
 export const dynamic = "force-dynamic";
@@ -45,6 +53,28 @@ function ChipList({ items, tone }: { items: string[]; tone?: "required" | "prefe
   );
 }
 
+/** Keeps the saved match current. Best effort: the page is correct without it. */
+async function saveSnapshot(
+  user: Awaited<ReturnType<typeof requireUser>>,
+  jobId: string,
+  match: MatchResult,
+  profileHash: string,
+) {
+  try {
+    const store = await getMatchStore(user);
+    const saved = await store.get(user.id, jobId);
+    if (
+      saved?.profileHash === profileHash &&
+      saved.result.scorer_version === match.scorer_version
+    ) {
+      return;
+    }
+    await store.save(user.id, jobId, match, profileHash);
+  } catch {
+    // Not saving only means the next visit tries again.
+  }
+}
+
 export default async function JobPage({ params }: { params: Promise<{ id: string }> }) {
   const id = z.uuid().safeParse((await params).id);
   if (!id.success) notFound();
@@ -70,6 +100,21 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
     );
   }
   if (!job) notFound();
+
+  // Scored live from the verified profile. A failure here must not hide the job itself.
+  let match: MatchResult | null = null;
+  let pending = 0;
+  let matchFailed = false;
+  try {
+    const context = await loadMatchContext(user);
+    pending = context.pending;
+    if (canScore(context.candidate)) {
+      match = scoreJob(job, context.candidate);
+      await saveSnapshot(user, job.id, match, context.candidate.hash);
+    }
+  } catch {
+    matchFailed = true;
+  }
 
   const pay = formatJobPay(job);
   const posted = formatPostedDate(job.posted_at);
@@ -118,6 +163,16 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_18rem]">
         <div className="flex min-w-0 flex-col gap-6">
+          {match ? (
+            <JobIntelligence match={match} />
+          ) : matchFailed ? (
+            <p role="alert" className="border-danger/40 text-muted rounded-lg border p-4 text-sm">
+              Could not work out Application Strength right now. Reload to try again.
+            </p>
+          ) : (
+            <BuildProfilePrompt pending={pending} />
+          )}
+
           <section aria-labelledby="description-heading" className={card}>
             <h2 id="description-heading" className="mb-3 text-sm font-semibold">
               Description
@@ -177,7 +232,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
               )}
               <p className="text-subtle mt-4 text-xs">
                 Read from the posting&apos;s text by pattern matching, so check it against the
-                original. Comparing it with your profile arrives with job matching.
+                original.
               </p>
             </section>
           )}

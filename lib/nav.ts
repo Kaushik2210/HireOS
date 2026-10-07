@@ -45,7 +45,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   },
   { id: "resume", label: "Resume", href: "/resume", icon: FileText, status: "live", phase: 4 },
   { id: "jobs", label: "Jobs", href: "/jobs", icon: Briefcase, status: "live", phase: 5 },
-  { id: "matches", label: "Matches", href: "/matches", icon: Target, status: "planned", phase: 6 },
+  { id: "matches", label: "Matches", href: "/matches", icon: Target, status: "live", phase: 6 },
   { id: "outreach", label: "Outreach", href: "/outreach", icon: Send, status: "planned", phase: 8 },
   {
     id: "applications",
@@ -129,8 +129,9 @@ export const PALETTE_ACTIONS: readonly PaletteAction[] = [
     id: "find-matches",
     label: "Find matches",
     keywords: ["strength", "rank"],
-    status: "planned",
+    status: "live",
     phase: 6,
+    href: "/matches",
   },
   {
     id: "optimize-resume",

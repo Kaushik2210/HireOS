@@ -3,11 +3,20 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { formatJobPay, formatPostedDate } from "@/features/jobs/format";
 import { label } from "@/features/profile/format";
+import { StrengthChip } from "@/features/matching/components/strength";
 import type { Job } from "@/lib/jobs/schemas";
+import type { MatchLabel } from "@/lib/matching/types";
 
 const MAX_SKILLS = 6;
 
-export function JobCard({ job }: { job: Job }) {
+export function JobCard({
+  job,
+  match,
+}: {
+  job: Job;
+  /** Present once the person has verified profile data to compare with. */
+  match?: { strength: number; label: MatchLabel };
+}) {
   const pay = formatJobPay(job);
   const posted = formatPostedDate(job.posted_at);
   const skills = job.required_skills.slice(0, MAX_SKILLS);
@@ -36,6 +45,7 @@ export function JobCard({ job }: { job: Job }) {
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5">
+            {match && <StrengthChip strength={match.strength} label={match.label} />}
             {job.is_demo && <Badge variant="accent">Demo data</Badge>}
             {job.owner_user_id && <Badge variant="warning">Added by you</Badge>}
           </div>

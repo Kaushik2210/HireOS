@@ -10,8 +10,11 @@ import { DemoBanner, AddJobDialog } from "@/features/jobs/components/job-control
 import { JobCard } from "@/features/jobs/components/job-card";
 import { JobFilters } from "@/features/jobs/components/job-filters";
 import { Pagination } from "@/features/jobs/components/pagination";
+import { loadMatchContext } from "@/features/matching/load";
 import { requireUser } from "@/lib/auth/session";
 import { emptyResult, parseJobQuery, type JobSearchResult } from "@/lib/jobs/schemas";
+import type { MatchResult } from "@/lib/matching/types";
+import { canScore, scoreJob } from "@/services/matching/score";
 
 export const metadata: Metadata = { title: "Jobs" };
 export const dynamic = "force-dynamic";
@@ -37,6 +40,16 @@ export default async function JobsPage({
     ]);
   } catch {
     loadFailed = true;
+  }
+
+  // Strength chips are a convenience: if scoring fails the list still renders without them.
+  const matches = new Map<string, MatchResult>();
+  try {
+    const { candidate } = await loadMatchContext(user);
+    if (canScore(candidate))
+      for (const job of result.jobs) matches.set(job.id, scoreJob(job, candidate));
+  } catch {
+    matches.clear();
   }
 
   const filtered = Boolean(
@@ -116,7 +129,7 @@ export default async function JobsPage({
           </h2>
           <ul className="flex flex-col gap-3">
             {result.jobs.map((job) => (
-              <JobCard key={job.id} job={job} />
+              <JobCard key={job.id} job={job} match={matches.get(job.id)} />
             ))}
           </ul>
           <Pagination query={query} page={result.page} pageCount={result.pageCount} />
