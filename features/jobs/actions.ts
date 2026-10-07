@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getDocumentStore } from "@/db/documents";
+import { getApplicationStore } from "@/db/applications";
 import { getJobStore } from "@/db/jobs";
 import { getOutreachStore } from "@/db/outreach";
 import { JobStoreError } from "@/db/jobs/store";
@@ -78,6 +79,7 @@ export async function deleteJobAction(id: string): Promise<ActionResult> {
     // Saved resumes, letters and outreach drafts for this job go with it (the database cascades; demo mode does it here).
     await (await getDocumentStore(user)).removeForJob(user.id, parsed.data);
     await (await getOutreachStore(user)).removeForJob(user.id, parsed.data);
+    await (await getApplicationStore(user)).detachJob(user.id, parsed.data);
   } catch {
     return { ok: false, error: "Could not delete the job. Please try again." };
   }
