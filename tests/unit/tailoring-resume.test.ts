@@ -11,7 +11,7 @@ import { buildResume } from "@/services/tailoring/resume";
 import { verifyResume } from "@/services/tailoring/verify";
 import { makeJob, snapshotFrom } from "../fixtures/matching";
 
-let jobs: Job[] = [];
+const jobs: Job[] = [];
 beforeAll(async () => {
   const store = new MemoryJobStore();
   for (let page = 1; page <= 3; page++) {
