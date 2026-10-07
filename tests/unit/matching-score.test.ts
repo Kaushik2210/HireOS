@@ -12,7 +12,7 @@ import { buildCandidate } from "@/services/matching/candidate";
 import { canScore, scoreJob } from "@/services/matching/score";
 import { NOW, candidateFrom, makeJob } from "../fixtures/matching";
 
-let jobs: Job[] = [];
+const jobs: Job[] = [];
 
 beforeAll(async () => {
   const store = new MemoryJobStore();

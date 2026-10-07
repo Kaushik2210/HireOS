@@ -125,7 +125,7 @@ export const matchResultSchema = z.object({
   label: z.enum(MATCH_LABELS),
   /** Set when the skills cap lowered the result. Shown so the number is never a surprise. */
   cap: z.object({ applied: z.boolean(), reason: z.string().nullable() }),
-  components: z.array(componentSchema),
+  components: z.array(componentSchema).length(COMPONENT_IDS.length),
   why: z.array(evidenceSchema),
   gaps: z.array(gapSchema),
   keywords: z.object({ covered: z.array(z.string()), missing: z.array(z.string()) }),

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { ProfileSnapshot } from "@/db/profile/store";
 import { locationKey } from "@/lib/jobs/keys";
 import type { SkillLevel } from "@/lib/profile/constants";
-import { EXPERIENCE_LEVELS } from "@/lib/profile/constants";
+import type { EXPERIENCE_LEVELS } from "@/lib/profile/constants";
 import { normalizeKey, normalizeSkill } from "@/lib/skills/catalog";
 import { scanCatalogSkills } from "@/lib/skills/scan";
 import { verifiedSnapshot } from "@/services/profile/verified";
