@@ -102,22 +102,32 @@ export function DraftEditor({
   return (
     <div className="flex flex-col gap-4">
       {channel === "email" && (
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="text-subtle font-mono text-[10px] tracking-wide uppercase">Subject</span>
+        <div className="flex flex-col gap-1.5 text-sm">
+          <label
+            htmlFor={`subject-${id}`}
+            className="text-subtle font-mono text-[10px] tracking-wide uppercase"
+          >
+            Subject
+          </label>
           <Input
+            id={`subject-${id}`}
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             maxLength={200}
             readOnly={!editable}
             aria-readonly={!editable}
           />
-        </label>
+        </div>
       )}
-      <label className="flex flex-col gap-1.5 text-sm">
-        <span className="text-subtle font-mono text-[10px] tracking-wide uppercase">
+      <div className="flex flex-col gap-1.5 text-sm">
+        <label
+          htmlFor={`body-${id}`}
+          className="text-subtle font-mono text-[10px] tracking-wide uppercase"
+        >
           {isNote ? "Note" : "Message"}
-        </span>
+        </label>
         <Textarea
+          id={`body-${id}`}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={isNote ? 5 : 14}
@@ -134,7 +144,7 @@ export function DraftEditor({
             {body.length} of {LINKEDIN_NOTE_LIMIT} characters
           </span>
         )}
-      </label>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         {editable && (

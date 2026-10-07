@@ -23,6 +23,13 @@ test("documents and tailoring pages are protected", async ({ page }) => {
   await expect(page).toHaveURL(/\/login\?next=/);
 });
 
+test("outreach pages are protected", async ({ page }) => {
+  await page.goto("/outreach");
+  await expect(page).toHaveURL(/\/login\?next=%2Foutreach$/);
+  await page.goto("/jobs/00000000-0000-4000-8000-000000000000/outreach");
+  await expect(page).toHaveURL(/\/login\?next=/);
+});
+
 test("the root path goes to login without a next parameter", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
