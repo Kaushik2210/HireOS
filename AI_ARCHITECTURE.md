@@ -51,13 +51,24 @@ Tests pin the behaviour: the same inputs give the same result; adding a missing 
 Planned: an LLM may later reword the explanation lines. It will receive only the evidence the scorer produced, return Zod-validated text, and never change a number or a gap.
 
 ## Integrity verifier
-Every generated artifact (resume bullets, cover letters, outreach, answers) is a list of **claims**, each `{text, source_ref, kind}` where `source_ref` points to a profile item id (skill, project, experience, certification, achievement).
-Verifier steps, run after generation and before anything is shown as approvable:
-1. Reject claims without a `source_ref` or with a ref not owned by the user.
-2. Check the claim's entities (tools, technologies, employers, degrees, numbers) appear in the referenced item; unmatched entities block the claim.
-3. Check numbers/metrics exist verbatim in the source.
-4. Blocked claims are removed and reported: "Docker is required by this job but was not found in your verified profile. If you have genuinely used it, add the experience."
-Tests include a job requiring a skill the profile lacks, and a model that tries to add it.
+Implemented in Phase 7 (`services/tailoring/verify.ts`) and independent of the code that builds documents: it re-reads every line against the user's verified profile and blocks what it cannot trace.
+
+Documents are lists of **claims**, each `{id, kind, text, refs}` where each ref names an item (`entity`, `id`) and the fields (`fields`, such as `highlights.2`) the words came from. Steps, run on every save and again on approval:
+1. Every claim has at least one ref, and every ref resolves to an item the user owns that is **confirmed**. Items still awaiting review never support a claim.
+2. The words match the fields. Bullets, summaries, headlines and skills must equal their one source field exactly (after whitespace normalisation). Headings may only combine their named fields with punctuation and "in"/"at". Detail lines may only add month names, "Present" and years that the item's own dates contain.
+3. Every skill, tool or technology the catalogue finds in the text must appear in the source items.
+4. Every number must appear in the source items.
+5. Blocked claims are listed with a reason, make the version unapprovable, and are never silently dropped.
+
+Cover letters are sentences with fixed wording around verbatim pieces of the profile. Their claims are checked as above (refs only), and the final text, whether generated or edited by the user, is checked against the whole verified profile: any skill or number it names must exist there. The role title and company are accepted as written because they come from the posting; they are removed from the sentence before the skill scan, so a title naming a skill the person lacks neither passes that skill through nor is mistaken for a claim.
+
+Missing requirements are reported, not hidden: "Docker is required by this job but was not found in your verified profile. If you have genuinely used it, add the experience."
+
+Tests tamper with built documents (a skill added to a bullet, a rewritten bullet, a changed number, a fabricated skill claim, an unconfirmed source, a missing ref, an extra word in a heading, a changed year, an edited headline) and expect each to be blocked and only that claim. A negative control disables the check and confirms those tests fail. A property test builds a resume for every demo candidate and every job (and the master resume) and requires zero blocked claims; another does the same for letters.
+
+## Tailoring status (Phase 7)
+Tailoring is deterministic and needs no API key. It **selects and orders** verified items for a job and never rewrites them: skills the job names move first, projects are ranked by how many of the job's skills they use (up to three; a fallback of two recent ones is used, and labelled, when none relates), bullets that mention the job's skills come first and at most four per entry are kept, and all roles stay. The user can untick any item or bullet. Each change is recorded with a plain reason tied to the posting.
+Wording generation by an LLM is Planned. When added it will receive only verified items and the job's parsed fields as delimited data, return Zod-validated claims with refs, and run through the verifier above, which today already blocks any line whose words differ from its source.
 
 ## Prompt-injection defenses
 - External text (JD, resume, contact notes) is placed in clearly delimited data blocks, labeled untrusted; system prompt states data must never be followed as instructions.

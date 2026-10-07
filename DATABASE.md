@@ -19,7 +19,7 @@ PostgreSQL via Supabase. Versioned SQL migrations in `supabase/migrations` (the 
 | Profile data | `skills` | Skill per user with type, level, evidence refs. Canonical skill catalog is a shared read-only table `skill_catalog`. |
 | | `projects`, `certifications`, `experiences` | Verified profile items; the only legal sources for generated claims. |
 | Resume | `resumes` | Uploaded file metadata (storage path, hash, parse status, health scores). |
-| | `resume_versions` | Tailored versions v1..vN, content, `job_id`, parent, claim `source_ref`s, approval state. |
+| | `document_versions` | Tailored resume and cover letter versions v1..vN per job: content with claim `source_ref`s, change reasons, integrity result, plain-text body, parent, approval state. |
 | Jobs | `companies` | Normalized company records (shared). |
 | | `job_sources` | Provider/source registry with terms basis. |
 | | `jobs` | Normalized jobs (shared catalog), dedupe key, embedding `vector`. |
@@ -72,6 +72,7 @@ Export (JSON of all user rows), delete resume/profile/applications, delete accou
 | `..07_resume_storage` | Private `resumes` bucket (4 MB, PDF/DOCX only) and `storage.objects` policies: own folder only, exact `{uuid}/{uuid}.pdf|docx` names, no update |
 | `..08_jobs` | `job_sources` (reference rows), `companies`, `jobs`, the `search_jobs()` function, and the private-job limit trigger |
 | `..09_job_matches` | `job_matches`: the last Application Strength saved per user and job, with RLS (own rows only) and a per-user cap |
+| `..10_document_versions` | `document_versions`: numbered tailored resumes and cover letters per user and job, immutable once saved, approvable only after a passing integrity check |
 
 Grants are explicit and least-privilege (`revoke all` from `anon`/`authenticated`, then grant what is needed), so correctness does not depend on Supabase default privileges.
 
@@ -112,3 +113,11 @@ Limits: it is not a Supabase stack. GoTrue, PostgREST, storage policies and exte
 - The score is a pure function of a job and the verified profile, so this table is a snapshot, not a source of truth. `profile_hash` (SHA-256 of the scoring inputs) and `scorer_version` tell the app when a snapshot is stale.
 - RLS: a user reads, refreshes and deletes only their own rows. Inserts must name themselves and a job they can see (the policy checks visibility through `jobs` RLS, so another user's private job cannot be referenced). Column grants stop a client moving a row to another user or job. Deleting a job or an account cascades. A trigger caps each user at 2000 rows.
 - Tested with two users, constraint cases, cascade, and a negative control (loosening the select policy fails the isolation test).
+
+## Document versions (Phase 7)
+- One row per saved version, numbered per `(user_id, job_id, kind)` with a unique constraint (`kind` is `resume` or `cover_letter`). `parent_id` links a version to the one it was made from and is set null if that parent is deleted.
+- `content` is the whole document with every claim and the item and field it came from; `changes` and `missing` record why items were chosen or left out and which requirements the profile could not support; `verification` is the integrity result at save time (a CHECK requires `ok` to be a boolean); `body` is the plain text used for display, comparison and export (at most 20,000 characters); `profile_hash` and `tailor_version` say what it was built from.
+- **Immutable.** Users get insert on a fixed column list and update on only `status` and `approved_at`. A trigger refuses any update to an approved row. Two CHECKs make approval consistent: approved if and only if `approved_at` is set, and never approved when `verification.ok` is not true. Users also cannot insert a row that is already approved.
+- RLS: own rows only. Inserts must name the caller, a job the caller can see (through `jobs` RLS) and, if given, a parent the caller owns. Because a policy that reads its own table would recurse, the parent check uses a small `security definer` function (`owns_document_version`) that answers only "is this version mine?" for the calling user.
+- Deleting a job or an account cascades. A trigger caps each user at 200 versions.
+- Tested with two users, every constraint, the immutability and approval rules, cascades and parent handling, plus negative controls (removing the approval CHECK or the parent check fails a test). The tests also caught a real gap: a `verification` object without `ok` slipped past the first version of the CHECK.

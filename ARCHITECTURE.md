@@ -79,6 +79,14 @@ Importing parsed items is a separate, explicit step: items enter the profile as 
 - **Stores.** `MatchStore` has an in-memory demo implementation and a Supabase one on the user-scoped client; both save a snapshot per user and job.
 - **Pages.** `/jobs/[id]` shows Job Intelligence (live-scored, then snapshot saved if the profile hash or scorer version changed); `/matches` ranks everything with a band filter and paging; job cards and the dashboard's Top opportunities panel show strength. If scoring fails the rest of each page still renders.
 
+## Tailoring pipeline
+- **Build** (`services/tailoring/resume.ts`, `cover-letter.ts`): turn the verified snapshot and a job into a document of claims, plus the list of changes with reasons and the requirements the profile cannot support. Pure functions.
+- **Verify** (`verify.ts`): the independent integrity check described in AI_ARCHITECTURE.md. Runs on save and on approval.
+- **Prepare** (`prepare.ts`): builds a ready-to-store version (rendered text, verification, profile hash). Always runs on the server from stored data; the browser sends only which items to leave out, or the user's edited letter text.
+- **Versions** (`db/documents`): `DocumentStore` with an in-memory demo implementation and a Supabase one. Versions are numbered per job and kind, immutable once saved, and approved only after a passing check.
+- **Compare** (`diff.ts`): a line diff of two versions' plain text.
+- **Pages.** `/jobs/[id]/tailor` (live preview from the current profile, the picker, reasons, missing requirements, save), `/jobs/[id]/cover-letter` (editable draft), `/jobs/[id]/documents/[versionId]` (review, approve, compare, copy, download, delete) and `/documents` (everything saved, grouped by job). Nothing is sent anywhere: the user applies on the employer's own page.
+
 ## Cross-cutting
 - **Config**: typed env loader; the app boots with no keys (demo mode), features degrade to explicit "configure" states.
 - **Errors**: typed `Result`/error classes; no raw error text to clients; no PII in logs.

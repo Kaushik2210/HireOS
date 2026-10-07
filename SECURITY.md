@@ -73,6 +73,14 @@ Known limits: parsing runs in the request process (bounded, but a pathological f
 - **Stored results are re-validated** with the same Zod schema on read; a row that no longer fits is treated as absent.
 - **Bounded work.** Ranking is capped at 500 jobs per request and saved matches at 2000 per user.
 
+## Implemented in Phase 7 (resume optimizer)
+- **No invented claims.** Documents are built only from confirmed profile items, each line carries the item and field it came from, and an independent verifier re-checks every line (exact wording, named skills, numbers, dates) before a version can be approved. Edited cover letters are checked against the whole verified profile. The tests tamper with documents and expect blocks, and a negative control proves they fail when the verifier is disabled.
+- **The server builds the content.** Save actions accept only a job id, a list of item keys to leave out (strictly patterned) or the user's letter text (length-bounded). They never accept document content, so a forged request cannot plant a claim.
+- **Job text is data.** The posting's title and company appear verbatim in a letter's opening line and nowhere else; instruction-like text in them is rendered as text and changes nothing (tested with injection strings, including in the resume path).
+- **Approval is a review decision, not an action on the world.** It sends nothing. Approved versions are immutable in the database, and the database refuses to approve a version whose check failed.
+- **Row Level Security** on `document_versions`: own rows only, inserts must reference a visible job and an owned parent, column grants limit updates to the review state, and a `security definer` helper that only answers "is this version mine?" avoids policy recursion. Two-user tests plus negative controls.
+- **Export is user-driven.** Copy and download happen in the browser from the stored text; there is no email, upload or share path.
+
 ## User data controls
 View, edit, export (JSON), delete resume/profile/applications, wipe demo data, delete account (cascade + storage purge).
 
