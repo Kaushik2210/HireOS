@@ -149,6 +149,16 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           ) : (
             <span className="text-muted text-sm">No application link was given for this job.</span>
           )}
+          <Button asChild variant="secondary">
+            <Link href={`/jobs/${job.id}/tailor`} prefetch={false}>
+              Tailor resume
+            </Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link href={`/jobs/${job.id}/cover-letter`} prefetch={false}>
+              Cover letter
+            </Link>
+          </Button>
           {isOwn && <DeleteJobButton jobId={job.id} />}
         </div>
         {job.apply_url && (

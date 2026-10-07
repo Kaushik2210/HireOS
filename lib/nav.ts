@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Briefcase,
+  FileStack,
   FileText,
   GraduationCap,
   KanbanSquare,
@@ -46,6 +47,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { id: "resume", label: "Resume", href: "/resume", icon: FileText, status: "live", phase: 4 },
   { id: "jobs", label: "Jobs", href: "/jobs", icon: Briefcase, status: "live", phase: 5 },
   { id: "matches", label: "Matches", href: "/matches", icon: Target, status: "live", phase: 6 },
+  {
+    id: "documents",
+    label: "Documents",
+    href: "/documents",
+    icon: FileStack,
+    status: "live",
+    phase: 7,
+  },
   { id: "outreach", label: "Outreach", href: "/outreach", icon: Send, status: "planned", phase: 8 },
   {
     id: "applications",
@@ -137,15 +146,17 @@ export const PALETTE_ACTIONS: readonly PaletteAction[] = [
     id: "optimize-resume",
     label: "Optimize resume",
     keywords: ["tailor"],
-    status: "planned",
+    status: "live",
     phase: 7,
+    href: "/matches",
   },
   {
     id: "cover-letter",
     label: "Generate cover letter",
     keywords: ["write"],
-    status: "planned",
+    status: "live",
     phase: 7,
+    href: "/matches",
   },
   {
     id: "prepare-outreach",
