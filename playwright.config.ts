@@ -9,6 +9,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
+  // Eight workers share one production server; navigation can take a few seconds under that load.
+  expect: { timeout: 10_000 },
   use: { trace: "retain-on-failure" },
   projects: [
     {

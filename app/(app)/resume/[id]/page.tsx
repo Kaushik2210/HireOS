@@ -54,6 +54,7 @@ export default async function ResumeDetailPage({ params }: { params: Promise<{ i
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <div>
         <Link
+          prefetch={false}
           href="/resume"
           className="text-muted hover:text-foreground mb-3 inline-flex items-center gap-1 text-sm"
         >

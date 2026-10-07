@@ -91,6 +91,7 @@ export default async function ResumePage() {
             {resumes.map((r) => (
               <li key={r.id}>
                 <Link
+                  prefetch={false}
                   href={`/resume/${r.id}`}
                   className="border-border bg-surface hover:bg-surface-hover flex items-center justify-between gap-4 rounded-lg border p-4 transition-colors"
                 >

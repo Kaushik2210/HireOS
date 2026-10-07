@@ -29,7 +29,9 @@ export function TopOpportunities({
         }
         action={
           <Button asChild variant="secondary" size="sm">
-            <Link href="/profile">{pending > 0 ? "Review profile" : "Build your profile"}</Link>
+            <Link prefetch={false} href="/profile">
+              {pending > 0 ? "Review profile" : "Build your profile"}
+            </Link>
           </Button>
         }
       />
@@ -43,7 +45,9 @@ export function TopOpportunities({
         description="Add a job you found, or show the sample jobs again."
         action={
           <Button asChild variant="secondary" size="sm">
-            <Link href="/jobs">Go to jobs</Link>
+            <Link prefetch={false} href="/jobs">
+              Go to jobs
+            </Link>
           </Button>
         }
       />
@@ -80,7 +84,11 @@ export function TopOpportunities({
           );
         })}
       </ol>
-      <Link href="/matches" className="text-accent mt-3 inline-block text-xs hover:underline">
+      <Link
+        prefetch={false}
+        href="/matches"
+        className="text-accent mt-3 inline-block text-xs hover:underline"
+      >
         See all matches
       </Link>
     </div>

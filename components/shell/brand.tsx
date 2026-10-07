@@ -3,6 +3,7 @@ import Link from "next/link";
 export function Brand() {
   return (
     <Link
+      prefetch={false}
       href="/dashboard"
       className="flex items-center gap-2 rounded-md px-1 text-sm font-semibold tracking-tight"
     >

@@ -91,6 +91,7 @@ export default async function VersionPage({
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <div>
         <Link
+          prefetch={false}
           href={`/jobs/${job.id}/${version.kind === "resume" ? "tailor" : "cover-letter"}`}
           className="text-muted hover:text-foreground mb-3 inline-flex items-center gap-1 text-sm"
         >
@@ -109,7 +110,7 @@ export default async function VersionPage({
         </div>
         <p className="text-muted mt-1 text-sm break-words">
           For{" "}
-          <Link href={`/jobs/${job.id}`} className="hover:underline">
+          <Link prefetch={false} href={`/jobs/${job.id}`} className="hover:underline">
             {job.title} at {job.company_name}
           </Link>
           . Saved{" "}
@@ -144,6 +145,7 @@ export default async function VersionPage({
               </h2>
               <DiffView lines={diff} />
               <Link
+                prefetch={false}
                 href={`/jobs/${job.id}/documents/${version.id}`}
                 className="text-accent text-xs hover:underline"
               >
@@ -181,7 +183,7 @@ export default async function VersionPage({
             />
             {version.kind === "cover_letter" && (
               <Button asChild variant="secondary" size="sm">
-                <Link href={`/jobs/${job.id}/cover-letter?from=${version.id}`}>
+                <Link prefetch={false} href={`/jobs/${job.id}/cover-letter?from=${version.id}`}>
                   Edit as a new version
                 </Link>
               </Button>

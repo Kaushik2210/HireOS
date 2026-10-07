@@ -64,6 +64,7 @@ export default async function TailorPage({
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <div>
         <Link
+          prefetch={false}
           href={`/jobs/${job.id}`}
           className="text-muted hover:text-foreground mb-3 inline-flex items-center gap-1 text-sm"
         >

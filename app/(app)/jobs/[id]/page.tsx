@@ -124,6 +124,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div>
         <Link
+          prefetch={false}
           href="/jobs"
           className="text-muted hover:text-foreground mb-3 inline-flex items-center gap-1 text-sm"
         >

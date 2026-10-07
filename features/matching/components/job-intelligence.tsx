@@ -31,11 +31,15 @@ export function BuildProfilePrompt({ pending }: { pending: number }) {
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         <Button asChild variant="primary" size="sm">
-          <Link href="/profile">{pending > 0 ? "Review your profile" : "Build your profile"}</Link>
+          <Link prefetch={false} href="/profile">
+            {pending > 0 ? "Review your profile" : "Build your profile"}
+          </Link>
         </Button>
         {pending === 0 && (
           <Button asChild variant="secondary" size="sm">
-            <Link href="/resume">Import a resume</Link>
+            <Link prefetch={false} href="/resume">
+              Import a resume
+            </Link>
           </Button>
         )}
       </div>

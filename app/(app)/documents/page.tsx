@@ -65,7 +65,9 @@ export default async function DocumentsPage() {
           description="Open a job, then tailor your resume or draft a cover letter for it."
           action={
             <Button asChild variant="secondary" size="sm">
-              <Link href="/matches">Find a job to tailor for</Link>
+              <Link prefetch={false} href="/matches">
+                Find a job to tailor for
+              </Link>
             </Button>
           }
         />

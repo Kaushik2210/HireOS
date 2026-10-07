@@ -68,7 +68,7 @@ export function CompletenessCard({
 
       {pending > 0 && (
         <p className="text-warning text-xs">
-          <Link href={`${profileHref}#review`} className="underline">
+          <Link prefetch={false} href={`${profileHref}#review`} className="underline">
             {pending} {pending === 1 ? "item needs" : "items need"} your review
           </Link>{" "}
           and {pending === 1 ? "is" : "are"} not counted yet.
@@ -84,6 +84,7 @@ export function CompletenessCard({
             {nextSteps.map((step) => (
               <li key={step.id}>
                 <Link
+                  prefetch={false}
                   href={`${profileHref}${CRITERION_ANCHOR[step.id] ?? ""}`}
                   className="text-muted hover:text-foreground hover:underline"
                 >

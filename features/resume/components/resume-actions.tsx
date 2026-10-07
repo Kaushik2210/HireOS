@@ -32,7 +32,11 @@ export function ImportPanel({ resumeId, itemCount }: { resumeId: string; itemCou
           {pending ? "Adding…" : "Add to profile for review"}
         </Button>
         {result?.ok && (
-          <Link href="/profile#review" className="text-accent text-sm hover:underline">
+          <Link
+            prefetch={false}
+            href="/profile#review"
+            className="text-accent text-sm hover:underline"
+          >
             Review on your profile
           </Link>
         )}
