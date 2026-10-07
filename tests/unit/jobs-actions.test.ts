@@ -77,7 +77,8 @@ describe("addJobAction", () => {
     });
     expect(job.required_skills).toEqual(expect.arrayContaining(["Python", "PostgreSQL", "Docker"]));
     expect(job.preferred_skills).toEqual(["Apache Kafka"]);
-    expect(revalidatePath).toHaveBeenCalledWith("/jobs");
+    // The redirect target renders fresh, and re-rendering the list inside the action slowed the redirect.
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 
   it("returns field errors for invalid input and stores nothing", async () => {
