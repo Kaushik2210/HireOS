@@ -37,6 +37,19 @@ test("application pages are protected", async ({ page }) => {
   await expect(page).toHaveURL(/\/login\?next=/);
 });
 
+test("interview pages are protected", async ({ page }) => {
+  await page.goto("/interviews");
+  await expect(page).toHaveURL(/\/login\?next=%2Finterviews$/);
+  for (const path of [
+    "/interviews/00000000-0000-4000-8000-000000000000",
+    "/practice/00000000-0000-4000-8000-000000000000",
+    "/jobs/00000000-0000-4000-8000-000000000000/practice",
+  ]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/login\?next=/);
+  }
+});
+
 test("the root path goes to login without a next parameter", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);

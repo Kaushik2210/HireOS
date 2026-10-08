@@ -352,11 +352,15 @@ export function scoreAnswer(
   const dimensions = DIMENSION_IDS.map((id) => byId[id]);
   const live = dimensions.filter((d) => d.applicable && d.score !== null);
   const overall = clamp(live.reduce((t, d) => t + d.score!, 0) / Math.max(1, live.length));
-  const improve = live
-    .filter((d) => d.suggestion && d.score! < 70)
-    .sort((a, b) => a.score! - b.score!)
-    .slice(0, 3)
-    .map((d) => d.suggestion!);
+  // A claim the profile cannot back is the most important thing to say first; then lowest scores.
+  const honesty = byId.integrity;
+  const ranked = live
+    .filter((d) => d.suggestion && d.score! < 70 && d.id !== "integrity")
+    .sort((a, b) => a.score! - b.score!);
+  const improve = [
+    ...(honesty.suggestion && (honesty.score ?? 100) < 100 ? [honesty.suggestion] : []),
+    ...ranked.map((d) => d.suggestion!),
+  ].slice(0, 3);
   return answerFeedbackSchema.parse({
     scorer_version: INTERVIEW_SCORER_VERSION,
     overall,

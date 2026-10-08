@@ -119,11 +119,11 @@ export function buildQuestions(
       : null;
   };
   // One question per skill first, so the set spans the posting before going deeper. The first
-  // skill the person lacks comes after at most three they have, so a short set still has one.
+  // skill the person lacks comes after at most two they have, so even a short set includes one.
   const ownedFirst = owned.map((n) => askAbout(n, 0)).filter((q): q is Question => q !== null);
   const gapFirst = gaps.map((n) => askAbout(n, 0)).filter((q): q is Question => q !== null);
   const opening = [...ownedFirst];
-  opening.splice(Math.min(3, opening.length), 0, ...gapFirst);
+  opening.splice(Math.min(2, opening.length), 0, ...gapFirst);
   technical.push(...opening);
   for (const depth of [1, 2]) {
     for (const name of owned) {

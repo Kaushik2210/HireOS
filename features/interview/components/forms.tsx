@@ -270,24 +270,38 @@ export function EditInterviewForm({
 export function ChecklistPanel({ id, items }: { id: string; items: ChecklistItem[] }) {
   const { pending, message, run } = useAction();
   const [text, setText] = useState("");
-  const done = items.filter((i) => i.done).length;
+  // Ticks show at once; the server's list replaces this whenever it changes.
+  const [local, setLocal] = useState(items);
+  const [seen, setSeen] = useState(items);
+  if (seen !== items) {
+    setSeen(items);
+    setLocal(items);
+  }
+  const done = local.filter((i) => i.done).length;
+
+  const toggle = (item: ChecklistItem, checked: boolean) => {
+    setLocal((prev) => prev.map((i) => (i.id === item.id ? { ...i, done: checked } : i)));
+    run(async () => {
+      const result = await toggleChecklistAction({ id, item_id: item.id, done: checked });
+      if (!result.ok) setLocal(items);
+      return result;
+    });
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <p className="text-muted text-xs" aria-live="polite" data-testid="checklist-progress">
-        {done} of {items.length} done
+        {done} of {local.length} done
       </p>
       <ul className="flex flex-col gap-2" data-testid="checklist">
-        {items.map((item) => (
+        {local.map((item) => (
           <li key={item.id} className="flex items-start gap-2 text-sm">
             <input
               id={`item-${item.id}`}
               type="checkbox"
               checked={item.done}
-              disabled={pending}
               className="mt-1"
-              onChange={(e) =>
-                run(() => toggleChecklistAction({ id, item_id: item.id, done: e.target.checked }))
-              }
+              onChange={(e) => toggle(item, e.target.checked)}
             />
             <label
               htmlFor={`item-${item.id}`}
@@ -453,7 +467,7 @@ export function AnswerForm({
   const [answer, setAnswer] = useState("");
   return (
     <form
-      aria-label="Your answer"
+      aria-label="Answer this question"
       className="flex flex-col gap-3"
       onSubmit={(e) => {
         e.preventDefault();
