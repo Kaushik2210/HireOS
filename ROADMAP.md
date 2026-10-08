@@ -13,7 +13,7 @@ Priority key: **Must** (MVP), **Should**, **Could**. Status is updated at each p
 | 7 | Resume optimizer (tailoring, diff, versions, integrity verifier, cover letter) | Must | Done (selection and ordering only; AI rewriting Planned; Supabase path unverified live) |
 | 8 | Outreach assistant (drafts, LinkedIn copy-only assistant) | Should | Done (templated drafts, copy only; AI wording Planned; Supabase path unverified live) |
 | 9 | Application CRM (Kanban, transitions, events, follow-ups) | Must | Done (no drag and drop; Supabase path unverified live) |
-| 10 | Interview hub (prep, questions, Mock Interview Mode) | Should | Planned |
+| 10 | Interview hub (prep, questions, Mock Interview Mode) | Should | Done (rule-based scoring; AI coach Planned; Supabase path unverified live) |
 | 11 | Career analytics (funnel, rates, "Why am I not getting interviews?", gap analyzer) | Should | Planned |
 | 12 | Career graph | Could | Planned |
 | 13 | Security hardening (rate limits, CSP, audit, data export/delete) | Must | Planned |
@@ -83,3 +83,10 @@ Browser extension for user-initiated page capture, calendar integration for inte
 - Contacts (`contacts` in the original data model) are not built: recruiter names live in notes and in outreach drafts. They would arrive with analytics if the data is worth structuring.
 - Sample applications are generated for each demo visitor from fixed definitions dated relative to now. They exist only in demo mode, are clearly labelled, and can be cleared with one button.
 - The Supabase application store, `change_application_status()` and the other functions through PostgREST have not run against a real project (SQL tested on PGlite, client calls against a fake). Verify tracking, moving, notes and delete with two real accounts.
+- Practice scoring judges how an answer is built, not whether it is right. It checks shape (STAR for experience questions; definition, reason and example for concept questions), concrete detail, topics the question usually calls for, ties to your own verified work, length and clarity, and honesty about your profile. It cannot tell a correct technical answer from a wrong one, understand meaning, or predict how any interviewer would react, and it can be gamed by writing the right words. The weights are equal and uncalibrated. An AI coach that reads answers is Planned and would have to stay rule-bound and hedged.
+- The question bank is small and hand-written (39 technical questions across 30 catalogue skills, 8 behavioral and 3 motivation questions). A posting whose skills are not in the bank gets general questions (data structures, SQL, Git) instead. The "topics" a question expects are prompts, not an answer key.
+- Practice is typed. There is no voice, video, timer or speech analysis, and a session is not resumable across a different question order: it asks the questions it saved, in order.
+- The prep checklist is a set of suggestions from the posting and your verified profile. It does not know what the interviewer will ask, and gaps are only phrased as "be ready to say plainly that you have not used X yet".
+- A round's date and time are the person's own wall-clock values with no time zone, and nothing is added to a calendar or reminded. Rounds are not linked to application status: moving an application to Interview is a separate step.
+- Contacts and interview outcomes (for analytics) are not modelled separately: the interviewer is free text and notes hold the rest. Phase 11 may want a structured outcome.
+- The Supabase interview and practice stores have not run against a real project (SQL tested on PGlite, client calls against a fake). Verify adding a round, ticking the checklist, a full practice session and deleting with two real accounts.

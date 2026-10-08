@@ -29,8 +29,8 @@ PostgreSQL via Supabase. Versioned SQL migrations in `supabase/migrations` (the 
 | | `contacts` | Planned, not built: recruiter names live in notes and outreach drafts for now. |
 | | `outreach_drafts` | Copy-only drafts and the user's own sent records (type, channel, subject, body, claim refs, review state). Hard-deleted, not soft-deleted. |
 | | `followups` | Not needed: follow-ups are derived from application events and the follow-up date. |
-| Interviews | `interviews` | Rounds, dates, notes, prep checklist. |
-| | `interview_questions` | Generated/mock questions, answers, scores. |
+| Interviews | `interviews` | Rounds for an application: dates, notes, prep checklist. |
+| | `mock_sessions`, `mock_answers` | Practice sessions with the questions asked, the answers given and their scores. Replaces the planned `interview_questions`: questions are chosen when a session starts and saved with it. |
 | Intelligence | `skill_gaps` | Per user x target: required vs have, severity, evidence job ids. |
 | | `career_recommendations` | Recommendations with evidence list and status. |
 | System | `analytics_events` | Product and funnel events. |
@@ -75,6 +75,7 @@ Export (JSON of all user rows), delete resume/profile/applications, delete accou
 | `..10_document_versions` | `document_versions`: numbered tailored resumes and cover letters per user and job, immutable once saved, approvable only after a passing integrity check |
 | `..11_outreach_drafts` | `outreach_drafts`: copy-only email and LinkedIn drafts per user and job. Editable while a draft, frozen once approved, and the sent state is only the user's own record |
 | `..12_applications` | `application_transitions` (allowed moves), `applications`, `application_events` (append-only), and the functions `change_application_status()` and `add_application_event()` |
+| `..13_interviews` | `interviews` (rounds with a prep checklist), `mock_sessions` (practice sessions with the questions asked) and `mock_answers` (answers and their feedback, never edited) |
 
 Grants are explicit and least-privilege (`revoke all` from `anon`/`authenticated`, then grant what is needed), so correctness does not depend on Supabase default privileges.
 
@@ -139,3 +140,10 @@ Limits: it is not a Supabase stack. GoTrue, PostgREST, storage policies and exte
 - RLS: own rows only, in both tables. A new application can only start as discovered, shortlisted, preparing or applied, for a job the user can see. Linking a document requires it to be the user's own, through the same ownership helper used by outreach and documents. Each user is capped at 500 applications.
 - The demo store is held to the database by a scripted parity test: the same random sequence of creates, moves, notes and date changes runs against both, and every status, date and event must match.
 - Tested with two users, every constraint, the full status matrix, the event log, cascades and the cap, plus negative controls (disabling the status guard, the document-ownership check or a transition row each fails a test).
+
+## Interviews and practice (Phase 10)
+- `interviews`: a round for one of the person's applications (`application_id`, cascade on delete). `kind`, `format` and `status` are constrained lists; the date and time are the person's own wall-clock values (a `date` and a `time` with no zone); the prep checklist is a JSON array of at most 30 items. A CHECK refuses a time without a date. Users can edit everything except the owner and the application. A trigger caps each user at 200 rounds.
+- `mock_sessions`: a practice session. `questions` holds exactly `question_count` (3 to 10) questions as they were asked, so later changes to the bank cannot alter history; the job's title and company are copied and `job_id` is set null if the job is deleted. A trigger enforces the lifecycle: a session cannot finish until every question has an answer, its `overall` must equal the average of the answers' scores, and a finished session never changes. Users cannot edit the questions, focus or owner. Capped at 200 per user.
+- `mock_answers`: one row per answered question, with the question, the answer (at most 3,000 characters), the feedback JSON and its overall score. A trigger accepts answers only in order (position 0, 1, 2, ...), only for an unfinished session of the same user, and never more than the question count. There is no update or delete grant, and a trigger refuses updates for every role; rows go only with their session.
+- RLS: own rows only on all three tables. An interview can only attach to an application the user can see (applications are private), a session only to a job the user can see, and an answer only to an open session of the user.
+- Tested with two users, every constraint, the answer ordering and finish rules, the cascades and caps, plus negative controls (removing the average check, the ordering check or the application-ownership check each fails a test).

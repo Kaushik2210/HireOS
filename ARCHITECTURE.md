@@ -100,6 +100,12 @@ Importing parsed items is a separate, explicit step: items enter the profile as 
 - **Store** (`db/applications`): `ApplicationStore` with an in-memory demo implementation (which also creates the sample applications) and a Supabase one that calls the database functions for moves and notes.
 - **Pages.** `/applications` (the board, summary and sample-data controls), `/applications/[id]` (timeline, status change, notes, follow-up date, linked documents, delete), a "track this job" form on each job page, and Pipeline summary and Today's actions panels on the dashboard. A follow-up draft opens the outreach page on the follow-up kind, where the person still confirms they applied before anything is written.
 
+## Interview hub
+- **Questions and scoring** (`services/interview`): `buildQuestions` chooses practice questions from the bank and the verified profile, `scoreAnswer` scores one answer on six dimensions, `buildChecklist` writes a prep checklist for a round. All pure and deterministic.
+- **Stores** (`db/interviews`, `db/practice`): each has an in-memory demo implementation and a Supabase one. Rounds belong to an application; a practice session saves its questions when it starts, takes answers in order, and finishes with the average.
+- **Actions** (`features/interview/actions.ts`): the server chooses questions and scores answers. The browser sends only the words of an answer, which round or job it is for, and form fields; any score or question it sends is ignored.
+- **Pages.** `/interviews` (rounds, practice shortcuts and history), `/interviews/[id]` (a round with its checklist), `/jobs/[id]/practice` (what is worth preparing, and start a session), `/practice/[id]` (one question at a time, then results). The application page lists its rounds and adds new ones.
+
 ## Cross-cutting
 - **Config**: typed env loader; the app boots with no keys (demo mode), features degrade to explicit "configure" states.
 - **Errors**: typed `Result`/error classes; no raw error text to clients; no PII in logs.

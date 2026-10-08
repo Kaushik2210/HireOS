@@ -96,6 +96,13 @@ Known limits: parsing runs in the request process (bounded, but a pathological f
 - **Row Level Security** on both tables with explicit column grants, a cap per user, and two-user tests plus negative controls.
 - **Demo data is labelled and removable.** Sample applications exist only in the demo sandbox, carry a badge, and clear without touching what the visitor added.
 
+## Implemented in Phase 10 (interview hub)
+- **Practice is private.** Sessions, answers and feedback are visible only to their owner (RLS plus server-side ownership checks) and are never shared, exported or sent to any service. Nothing is scored by a model.
+- **The server decides, the browser reports.** Questions are chosen and answers scored on the server from the stored question and the verified profile. A forged request cannot supply a score, a question, a status or an application it does not own: actions validate their input with Zod, check ownership, and ignore extra fields. A finished session cannot be changed and answers cannot be edited, enforced by database triggers for every role.
+- **Honesty is built in.** The feedback checks whether an answer claims skills the verified profile does not hold, lists that first, and treats an honest "I haven't used it yet" as the right answer to a question about a skill the person lacks.
+- **Typed text is untrusted.** Round names, interviewer, notes, checklist items and answers are bounded, stripped of control characters, rendered as text and tested with injection strings. The job's title and company appear only inside the question text that quotes them.
+- **Bounded.** Per-user caps on rounds and sessions, a checklist limit, an answer length limit, and a fixed number of questions per session.
+
 ## User data controls
 View, edit, export (JSON), delete resume/profile/applications, wipe demo data, delete account (cascade + storage purge).
 
