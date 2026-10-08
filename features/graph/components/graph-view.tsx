@@ -244,6 +244,22 @@ export function GraphView({ graph }: { graph: LaidOutGraph }) {
                   );
                 })}
               </g>
+              {/* Labels sit under the markers and never take clicks, so a long label cannot block the item beside it. */}
+              <g aria-hidden="true" className="pointer-events-none">
+                {visible.map((n) => (
+                  <text
+                    key={n.id}
+                    x={n.x}
+                    y={n.y + STYLE[n.type].r + 14}
+                    textAnchor="middle"
+                    opacity={focus !== null && !neighbours.has(n.id) ? 0.2 : 1}
+                    className="fill-foreground text-[11px]"
+                    style={{ paintOrder: "stroke", stroke: "var(--background)", strokeWidth: 3 }}
+                  >
+                    {clip(n.label)}
+                  </text>
+                ))}
+              </g>
               <g>
                 {visible.map((n) => {
                   const dim = focus !== null && !neighbours.has(n.id);
@@ -258,6 +274,7 @@ export function GraphView({ graph }: { graph: LaidOutGraph }) {
                       aria-label={`${NODE_TYPE_LABELS[n.type]}: ${n.label}${n.detail ? `, ${n.detail}` : ""}. Press Enter to see what it connects to.`}
                       data-testid={`node-${n.type}`}
                       data-node-id={n.id}
+                      data-label={n.label}
                       opacity={dim ? 0.2 : 1}
                       className="[&:focus-visible>circle.halo]:stroke-accent cursor-pointer focus-visible:outline-none"
                       onClick={() => setSelected(isSelected ? null : n.id)}
@@ -281,18 +298,6 @@ export function GraphView({ graph }: { graph: LaidOutGraph }) {
                         />
                       )}
                       <Mark type={n.type} />
-                      <text
-                        y={STYLE[n.type].r + 14}
-                        textAnchor="middle"
-                        className="fill-foreground text-[11px]"
-                        style={{
-                          paintOrder: "stroke",
-                          stroke: "var(--background)",
-                          strokeWidth: 3,
-                        }}
-                      >
-                        {clip(n.label)}
-                      </text>
                     </g>
                   );
                 })}
