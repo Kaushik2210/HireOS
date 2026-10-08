@@ -21,7 +21,8 @@ const MAX_SANDBOXES = 500;
 interface Sandbox {
   applications: Application[];
   events: ApplicationEvent[];
-  seeded: boolean;
+  /** Resolves once the sample applications are in. Every reader waits for the same one. */
+  ready: Promise<void> | null;
 }
 
 export interface MemoryApplicationOptions {
@@ -47,27 +48,29 @@ export class MemoryApplicationStore implements DemoApplicationStore {
   private async box(userId: string): Promise<Sandbox> {
     let box = this.sandboxes.get(userId);
     if (!box) {
-      box = { applications: [], events: [], seeded: false };
+      box = { applications: [], events: [], ready: null };
       this.sandboxes.set(userId, box);
       if (this.sandboxes.size > MAX_SANDBOXES) {
         const oldest = this.sandboxes.keys().next();
         if (!oldest.done) this.sandboxes.delete(oldest.value);
       }
     }
-    if (!box.seeded) {
-      box.seeded = true;
-      if (this.options.loadDemoJobs) {
-        const samples = buildDemoApplications(
-          await this.options.loadDemoJobs(),
-          this.now(),
-          randomUUID,
-        );
-        for (const s of samples) {
-          box.applications.push(s.application);
-          box.events.push(...s.events);
-        }
+    // Two reads can arrive together on a first visit; both must see the seeded box, so they
+    // share one promise rather than the first one marking it done before it is.
+    const sandbox = box;
+    sandbox.ready ??= (async () => {
+      if (!this.options.loadDemoJobs) return;
+      const samples = buildDemoApplications(
+        await this.options.loadDemoJobs(),
+        this.now(),
+        randomUUID,
+      );
+      for (const sample of samples) {
+        sandbox.applications.push(sample.application);
+        sandbox.events.push(...sample.events);
       }
-    }
+    })();
+    await sandbox.ready;
     return box;
   }
 

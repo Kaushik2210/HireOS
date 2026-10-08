@@ -20,6 +20,8 @@ describe("navigation registry", () => {
       "outreach",
       "applications",
       "interviews",
+      "analytics",
+      "gaps",
     ]);
   });
 

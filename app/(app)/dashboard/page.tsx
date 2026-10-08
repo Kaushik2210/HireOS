@@ -1,7 +1,5 @@
-import { Activity, Lightbulb } from "lucide-react";
 import type { Metadata } from "next";
-import { EmptyState } from "@/components/states/empty-state";
-import { Badge, PlannedBadge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { getApplicationStore } from "@/db/applications";
 import type { Application, ApplicationEvent } from "@/db/applications/store";
@@ -11,6 +9,8 @@ import {
   PipelineSummaryPanel,
   TodayPanel,
 } from "@/features/applications/components/dashboard-panels";
+import { InsightsPanel, ReadinessPanel } from "@/features/analytics/components/panels";
+import { loadAnalytics, type AnalyticsData } from "@/features/analytics/load";
 import { TopOpportunities } from "@/features/matching/components/top-opportunities";
 import { loadMatchContext } from "@/features/matching/load";
 import { CompletenessCard } from "@/features/profile/components/completeness-card";
@@ -27,21 +27,6 @@ export const metadata: Metadata = { title: "Dashboard" };
 
 // Capabilities depend on runtime environment variables, so never prerender.
 export const dynamic = "force-dynamic";
-
-const PLANNED_PANELS = [
-  {
-    title: "Career readiness",
-    description: "Readiness score built from your profile, resume health and skill coverage.",
-    icon: Activity,
-    phase: 4,
-  },
-  {
-    title: "Career insights",
-    description: "Evidence-backed recommendations drawn from your own data.",
-    icon: Lightbulb,
-    phase: 11,
-  },
-] as const;
 
 function StatusRow({
   label,
@@ -90,6 +75,14 @@ export default async function DashboardPage() {
     }
   } catch {
     matchesFailed = true;
+  }
+
+  // Insights and readiness are extras: if they fail the rest of the dashboard still works.
+  let insightsData: AnalyticsData | null = null;
+  try {
+    insightsData = await loadAnalytics(user);
+  } catch {
+    insightsData = null;
   }
 
   let applications: Application[] = [];
@@ -238,29 +231,34 @@ export default async function DashboardPage() {
         </section>
       </div>
 
-      <section aria-labelledby="modules" className="flex flex-col gap-3">
-        <h2 id="modules" className="text-sm font-medium">
-          Coming to this dashboard
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {PLANNED_PANELS.map((panel) => (
-            <div
-              key={panel.title}
-              className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-4"
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium">{panel.title}</h3>
-                <PlannedBadge phase={panel.phase} />
-              </div>
-              <EmptyState
-                icon={panel.icon}
-                title="Not available yet"
-                description={panel.description}
-              />
-            </div>
-          ))}
+      <div className="grid gap-4 md:grid-cols-2">
+        <section
+          aria-labelledby="readiness-heading"
+          className="border-border bg-surface rounded-lg border p-4"
+        >
+          <h2 id="readiness-heading" className="mb-4 text-sm font-medium">
+            Career readiness
+          </h2>
+          {insightsData ? (
+            <ReadinessPanel readiness={insightsData.readiness} />
+          ) : (
+            <p role="alert" className="text-danger text-sm">
+              Could not measure readiness. Reload to try again.
+            </p>
+          )}
+        </section>
+        <div className="flex flex-col gap-4">
+          {insightsData ? (
+            <InsightsPanel insights={insightsData.insights} compact />
+          ) : (
+            <section className="border-border bg-surface rounded-lg border p-4">
+              <p role="alert" className="text-danger text-sm">
+                Could not load your insights. Reload to try again.
+              </p>
+            </section>
+          )}
         </div>
-      </section>
+      </div>
     </div>
   );
 }

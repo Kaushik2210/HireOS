@@ -77,7 +77,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Analytics",
     href: "/analytics",
     icon: BarChart3,
-    status: "planned",
+    status: "live",
     phase: 11,
   },
   {
@@ -85,7 +85,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Career Gaps",
     href: "/gaps",
     icon: GraduationCap,
-    status: "planned",
+    status: "live",
     phase: 11,
   },
   {
@@ -178,8 +178,9 @@ export const PALETTE_ACTIONS: readonly PaletteAction[] = [
     id: "view-analytics",
     label: "View analytics",
     keywords: ["funnel"],
-    status: "planned",
+    status: "live",
     phase: 11,
+    href: "/analytics",
   },
   {
     id: "mock-interview",

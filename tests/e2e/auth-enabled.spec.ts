@@ -50,6 +50,13 @@ test("interview pages are protected", async ({ page }) => {
   }
 });
 
+test("analytics and gaps are protected", async ({ page }) => {
+  await page.goto("/analytics");
+  await expect(page).toHaveURL(/\/login\?next=%2Fanalytics$/);
+  await page.goto("/gaps");
+  await expect(page).toHaveURL(/\/login\?next=%2Fgaps$/);
+});
+
 test("the root path goes to login without a next parameter", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);

@@ -344,6 +344,20 @@ describe("sample applications", () => {
     expect((await s.list("other")).length).toBe(first.length);
   });
 
+  it("are all there even when two reads arrive together on a first visit", async () => {
+    // The job list takes real time to load, as it does on the server.
+    const slow = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      return jobs;
+    };
+    const s = new MemoryApplicationStore({ loadDemoJobs: slow, now: () => now });
+    const [list, activity, again] = await Promise.all([s.list("u"), s.activity("u"), s.list("u")]);
+    expect(list.length).toBeGreaterThan(0);
+    expect(activity.length).toBeGreaterThanOrEqual(list.length);
+    expect(again.map((a) => a.id)).toEqual(list.map((a) => a.id));
+    expect(new Set(list.map((a) => a.id)).size).toBe(list.length);
+  });
+
   it("block adding a duplicate of a sample job, so a person is told it is already tracked", async () => {
     const s = new MemoryApplicationStore({ loadDemoJobs: async () => jobs, now: () => now });
     const sample = (await s.list("u"))[0]!;
