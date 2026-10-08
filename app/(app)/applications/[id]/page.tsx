@@ -9,6 +9,8 @@ import { getApplicationStore } from "@/db/applications";
 import type { ApplicationWithEvents } from "@/db/applications/store";
 import { getDocumentStore } from "@/db/documents";
 import type { DocumentVersion } from "@/db/documents/store";
+import { getInterviewStore } from "@/db/interviews";
+import type { Interview } from "@/db/interviews/store";
 import { getJobStore } from "@/db/jobs";
 import {
   DeleteApplicationButton,
@@ -17,6 +19,8 @@ import {
   NoteForm,
   StatusPanel,
 } from "@/features/applications/components/controls";
+import { AddInterviewForm } from "@/features/interview/components/forms";
+import { INTERVIEW_KIND_LABELS } from "@/lib/interview/types";
 import { requireUser } from "@/lib/auth/session";
 import { describeEvent } from "@/lib/applications/format";
 import { STATUS_LABELS, CLOSED_STATUSES } from "@/lib/applications/types";
@@ -38,8 +42,14 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
   let found: ApplicationWithEvents | null = null;
   let job: Job | null = null;
   let documents: DocumentVersion[] = [];
+  let interviews: Interview[] = [];
   try {
     found = await (await getApplicationStore(user)).get(user.id, id.data);
+    if (found) {
+      interviews = await (
+        await getInterviewStore(user)
+      ).list(user.id, { applicationId: found.application.id });
+    }
     if (found?.application.jobId) {
       const jobId = found.application.jobId;
       [job, documents] = await Promise.all([
@@ -168,6 +178,42 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                 </li>
               ))}
             </ol>
+          </section>
+          <section
+            aria-labelledby="interviews-heading"
+            className={card}
+            data-testid="interviews-panel"
+          >
+            <h2 id="interviews-heading" className="mb-3 text-sm font-semibold">
+              Interviews
+            </h2>
+            {interviews.length > 0 && (
+              <ul className="divide-border mb-4 divide-y">
+                {interviews.map((i) => (
+                  <li
+                    key={i.id}
+                    className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
+                  >
+                    <Link href={`/interviews/${i.id}`} prefetch={false} className="hover:underline">
+                      {i.roundLabel}
+                      <span className="text-muted block text-xs">
+                        {INTERVIEW_KIND_LABELS[i.kind]}
+                        {i.scheduledOn ? ` · ${i.scheduledOn}` : ""}
+                      </span>
+                    </Link>
+                    <Badge variant={i.status === "scheduled" ? "accent" : "neutral"}>
+                      {i.status}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <details>
+              <summary className="text-accent cursor-pointer text-sm">Add an interview</summary>
+              <div className="mt-3">
+                <AddInterviewForm applicationId={app.id} />
+              </div>
+            </details>
           </section>
           <section aria-labelledby="note-heading" className={card}>
             <h2 id="note-heading" className="sr-only">

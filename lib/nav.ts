@@ -69,7 +69,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Interview Hub",
     href: "/interviews",
     icon: MessageSquare,
-    status: "planned",
+    status: "live",
     phase: 10,
   },
   {
@@ -185,7 +185,8 @@ export const PALETTE_ACTIONS: readonly PaletteAction[] = [
     id: "mock-interview",
     label: "Start mock interview",
     keywords: ["practice"],
-    status: "planned",
+    status: "live",
     phase: 10,
+    href: "/interviews",
   },
 ];

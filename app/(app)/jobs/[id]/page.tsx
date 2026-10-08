@@ -177,6 +177,11 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
               Prepare outreach
             </Link>
           </Button>
+          <Button asChild variant="secondary">
+            <Link href={`/jobs/${job.id}/practice`} prefetch={false}>
+              Practice interview
+            </Link>
+          </Button>
           {isOwn && <DeleteJobButton jobId={job.id} />}
         </div>
         <div

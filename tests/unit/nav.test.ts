@@ -19,6 +19,7 @@ describe("navigation registry", () => {
       "documents",
       "outreach",
       "applications",
+      "interviews",
     ]);
   });
 
