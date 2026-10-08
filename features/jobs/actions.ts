@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getDocumentStore } from "@/db/documents";
 import { getApplicationStore } from "@/db/applications";
 import { getJobStore } from "@/db/jobs";
+import { getPracticeStore } from "@/db/practice";
 import { getOutreachStore } from "@/db/outreach";
 import { JobStoreError } from "@/db/jobs/store";
 import { manualJobFormSchema } from "@/features/jobs/form";
@@ -80,6 +81,7 @@ export async function deleteJobAction(id: string): Promise<ActionResult> {
     await (await getDocumentStore(user)).removeForJob(user.id, parsed.data);
     await (await getOutreachStore(user)).removeForJob(user.id, parsed.data);
     await (await getApplicationStore(user)).detachJob(user.id, parsed.data);
+    await (await getPracticeStore(user)).detachJob(user.id, parsed.data);
   } catch {
     return { ok: false, error: "Could not delete the job. Please try again." };
   }

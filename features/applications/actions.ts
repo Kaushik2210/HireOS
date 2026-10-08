@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getApplicationStore, getDemoApplicationStore } from "@/db/applications";
 import { ApplicationStoreError } from "@/db/applications/store";
 import { getDocumentStore } from "@/db/documents";
+import { getInterviewStore } from "@/db/interviews";
 import { getJobStore } from "@/db/jobs";
 import type { ActionResult } from "@/lib/action-result";
 import { invalidResult } from "@/lib/action-result";
@@ -146,6 +147,8 @@ export async function deleteApplicationAction(id: string): Promise<ActionResult>
   try {
     const removed = await (await getApplicationStore(user)).remove(user.id, parsed.data);
     if (!removed) return { ok: false, error: "That application no longer exists." };
+    // Its interview rounds go with it (the database cascades; demo mode does it here).
+    await (await getInterviewStore(user)).removeForApplication(user.id, parsed.data);
   } catch {
     return { ok: false, error: "Could not delete. Please try again." };
   }
