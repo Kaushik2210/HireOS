@@ -14,7 +14,7 @@ Priority key: **Must** (MVP), **Should**, **Could**. Status is updated at each p
 | 8 | Outreach assistant (drafts, LinkedIn copy-only assistant) | Should | Done (templated drafts, copy only; AI wording Planned; Supabase path unverified live) |
 | 9 | Application CRM (Kanban, transitions, events, follow-ups) | Must | Done (no drag and drop; Supabase path unverified live) |
 | 10 | Interview hub (prep, questions, Mock Interview Mode) | Should | Done (rule-based scoring; AI coach Planned; Supabase path unverified live) |
-| 11 | Career analytics (funnel, rates, "Why am I not getting interviews?", gap analyzer) | Should | Planned |
+| 11 | Career analytics (funnel, rates, "Why am I not getting interviews?", gap analyzer) | Should | Done (rule-based, hedged; no new tables) |
 | 12 | Career graph | Could | Planned |
 | 13 | Security hardening (rate limits, CSP, audit, data export/delete) | Must | Planned |
 | 14 | Testing pass (edge cases, e2e, RLS suite completion) | Must | Planned |
@@ -90,3 +90,10 @@ Browser extension for user-initiated page capture, calendar integration for inte
 - A round's date and time are the person's own wall-clock values with no time zone, and nothing is added to a calendar or reminded. Rounds are not linked to application status: moving an application to Interview is a separate step.
 - Contacts and interview outcomes (for analytics) are not modelled separately: the interviewer is free text and notes hold the rest. Phase 11 may want a structured outcome.
 - The Supabase interview and practice stores have not run against a real project (SQL tested on PGlite, client calls against a fake). Verify adding a round, ticking the checklist, a full practice session and deleting with two real accounts.
+- Analytics are only as good as what the person records. HireOS sees no email or employer site, so every reply is something they entered. Rates use "n of m" and are flagged as a small sample below ten applications; with fewer than five, "Why am I not getting interviews?" says there is not enough data and shows only what the records support.
+- The "why" findings are patterns, never causes. They use hedged wording ("may have", "likely contributing"), list their evidence, and end with a caveat that employers decide for reasons that are not visible here. They cannot weigh things the data does not hold (referrals, luck, timing, the other applicants), and whether following up helps is stated as uncertain.
+- Application Strength in the analytics (by fit, repeated gaps) is measured against the profile as it is today, not as it was when the person applied, so a later profile change shifts old numbers. The page says so.
+- Career Gaps measures each missing skill by re-scoring up to 30 jobs (the ones tracked, then the best matches) with the skill added in a simulation. It does not know how hard a skill is to learn, how long it takes, or which employers really care, and it does not recommend courses or resources: it says to build something real and add the skill once it is true. Skills outside the catalogue cannot be measured.
+- Career readiness combines profile completeness, the latest resume's health score and the share of the top ten jobs rated Good or Strong, with equal care for what cannot be measured yet (a missing part is left out, not guessed). The weights (40, 30, 30) are uncalibrated.
+- Analytics read live on each visit: nothing is stored or cached, so very large histories (hundreds of applications) will slow the page. The activity read is capped at 2,000 events.
+- No outcome data beyond status is modelled (for example why a rejection happened, or offer details), so there is no salary or offer analysis yet.

@@ -106,6 +106,11 @@ Importing parsed items is a separate, explicit step: items enter the profile as 
 - **Actions** (`features/interview/actions.ts`): the server chooses questions and scores answers. The browser sends only the words of an answer, which round or job it is for, and form fields; any score or question it sends is ignored.
 - **Pages.** `/interviews` (rounds, practice shortcuts and history), `/interviews/[id]` (a round with its checklist), `/jobs/[id]/practice` (what is worth preparing, and start a session), `/practice/[id]` (one question at a time, then results). The application page lists its rounds and adds new ones.
 
+## Analytics
+- **Pure services** (`services/analytics`): `funnel` (what stages each application reached, reply rates as "n of m", median wait, applications per week), `insights` (the "why" analysis), `breakdowns` (replies by fit and by resume), `gaps` (measured skill gaps) and `readiness`. All take plain records and return plain results, so they are fully testable without a database.
+- **Loader** (`features/analytics/load.ts`): reads the stores through the user's own clients, scores each tracked job against today's profile, and hands the services what they need. A failure on the dashboard's insights panels is contained: the rest of the dashboard still renders.
+- **Pages.** `/analytics` (funnel, timing, weekly activity, the "why" panel, breakdowns, practice and outreach), `/gaps` (skills worth learning with the jobs that gain, skills to strengthen, strengths, experience), and the dashboard's Career readiness and Career insights panels.
+
 ## Cross-cutting
 - **Config**: typed env loader; the app boots with no keys (demo mode), features degrade to explicit "configure" states.
 - **Errors**: typed `Result`/error classes; no raw error text to clients; no PII in logs.

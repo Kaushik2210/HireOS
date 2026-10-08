@@ -103,6 +103,13 @@ Known limits: parsing runs in the request process (bounded, but a pathological f
 - **Typed text is untrusted.** Round names, interviewer, notes, checklist items and answers are bounded, stripped of control characters, rendered as text and tested with injection strings. The job's title and company appear only inside the question text that quotes them.
 - **Bounded.** Per-user caps on rounds and sessions, a checklist limit, an answer length limit, and a fixed number of questions per session.
 
+## Implemented in Phase 11 (analytics)
+- **Read-only and private.** Analytics write nothing and add no tables. Every figure comes from the person's own rows through their own client (RLS applies) and is shown only to them.
+- **No outcome predictions.** There is no hiring probability anywhere. Findings are hedged, list their evidence, and carry a caveat that they are patterns rather than causes; small samples are labelled. A test scans the output for outcome language.
+- **Gap analysis cannot invent skills.** The simulated skill exists only inside the calculation, is never saved, and the page tells the person to build something real and add the skill once it is true. A test checks that the profile passed in is left untouched.
+- **Bounded work.** The gap analysis scores at most 30 jobs and 12 candidate skills, the tracked-job read is capped, and the activity read is capped at 2,000 events.
+- **Found and fixed during this phase:** the demo application store seeded its sample data lazily but let a second concurrent read return before the seeding finished, so a first visit could show applications without their history. Reads now share one seeding promise, with a regression test that fails without the fix.
+
 ## User data controls
 View, edit, export (JSON), delete resume/profile/applications, wipe demo data, delete account (cascade + storage purge).
 
