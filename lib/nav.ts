@@ -93,7 +93,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Career Graph",
     href: "/graph",
     icon: Network,
-    status: "planned",
+    status: "live",
     phase: 12,
   },
   {

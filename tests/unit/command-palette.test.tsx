@@ -23,7 +23,7 @@ describe("CommandPaletteTrigger", () => {
     render(<CommandPaletteTrigger />);
     await user.click(screen.getByRole("button", { name: /open command palette/i }));
 
-    const planned = await screen.findByText("Career Graph");
+    const planned = await screen.findByText("Career Autopilot");
     expect(planned.closest("[cmdk-item]")).toHaveAttribute("aria-disabled", "true");
     await user.click(planned);
     expect(push).not.toHaveBeenCalled();
