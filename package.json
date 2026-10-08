@@ -18,7 +18,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test",
-    "seed:generate": "tsx --tsconfig tsconfig.json scripts/generate-seed.mts"
+    "seed:generate": "tsx --tsconfig tsconfig.json scripts/generate-seed.mts",
+    "supabase:bundle": "node scripts/bundle-sql.mjs",
+    "supabase:check": "node scripts/check-supabase.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
