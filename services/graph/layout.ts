@@ -4,7 +4,7 @@ export const GRAPH_WIDTH = 1000;
 export const GRAPH_HEIGHT = 720;
 const PAD = 60;
 /** Nodes closer than this overlap their labels, so they are pushed apart. */
-const MIN_GAP = 40;
+const MIN_GAP = 46;
 
 /** Where each kind of node starts, as a share of the half-width. Only the start: forces do the rest. */
 const START_RING: Record<NodeType, number> = {
@@ -43,7 +43,7 @@ const TYPE_ORDER: NodeType[] = [
 export function layoutGraph(
   graph: CareerGraph,
   size: { width: number; height: number } = { width: GRAPH_WIDTH, height: GRAPH_HEIGHT },
-  iterations = 220,
+  iterations = 300,
 ): LaidOutGraph {
   const { width, height } = size;
   const n = graph.nodes.length;
@@ -76,7 +76,7 @@ export function layoutGraph(
 
   if (n > 1) {
     const area = (width - PAD * 2) * (height - PAD * 2);
-    const k = Math.sqrt(area / n) * 0.8;
+    const k = Math.sqrt(area / n) * 1.15;
     let temperature = Math.min(width, height) / 8;
     const dx = new Float64Array(n);
     const dy = new Float64Array(n);
@@ -116,8 +116,8 @@ export function layoutGraph(
       for (let i = 0; i < n; i++) {
         if (graph.nodes[i]!.type === "user") continue;
         // A gentle pull to the middle keeps unconnected nodes from drifting away.
-        dx[i]! += (cx - x[i]!) * 0.02;
-        dy[i]! += (cy - y[i]!) * 0.02;
+        dx[i]! += (cx - x[i]!) * 0.006;
+        dy[i]! += (cy - y[i]!) * 0.006;
         const d = Math.hypot(dx[i]!, dy[i]!);
         if (d > 0) {
           const move = Math.min(d, temperature);

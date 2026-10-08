@@ -111,6 +111,12 @@ Importing parsed items is a separate, explicit step: items enter the profile as 
 - **Loader** (`features/analytics/load.ts`): reads the stores through the user's own clients, scores each tracked job against today's profile, and hands the services what they need. A failure on the dashboard's insights panels is contained: the rest of the dashboard still renders.
 - **Pages.** `/analytics` (funnel, timing, weekly activity, the "why" panel, breakdowns, practice and outreach), `/gaps` (skills worth learning with the jobs that gain, skills to strengthen, strengths, experience), and the dashboard's Career readiness and Career insights panels.
 
+## Career graph
+- **Build** (`services/graph/build.ts`): turns the verified snapshot, the tracked and best-matching jobs and the applications into nodes and edges. Pure and deterministic, with caps on jobs, skills per job and total nodes.
+- **Layout** (`services/graph/layout.ts`): a Fruchterman-Reingold force layout with no randomness. Nodes start on rings by type in input order, the person is pinned to the centre, and a final pass keeps every pair a minimum distance apart and inside the canvas.
+- **View** (`features/graph/components/graph-view.tsx`): an SVG with filters by kind of item, zoom, selection with a details panel, and a plain table of the same information. Nodes are focusable buttons, shape as well as colour tells kinds apart, and labels are drawn beneath the markers and ignore the pointer so they never block a click.
+- **Page.** `/graph` reuses the analytics loader for the profile, applications and ranked jobs.
+
 ## Cross-cutting
 - **Config**: typed env loader; the app boots with no keys (demo mode), features degrade to explicit "configure" states.
 - **Errors**: typed `Result`/error classes; no raw error text to clients; no PII in logs.

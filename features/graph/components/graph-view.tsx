@@ -2,7 +2,7 @@
 
 import { Minus, Plus, RotateCcw } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   EDGE_LABELS,
@@ -80,6 +80,9 @@ function Swatch({ type }: { type: NodeType }) {
   );
 }
 
+/** Skills and companies are numerous, so their names appear when zoomed in or when they matter to the selection. */
+const QUIET_LABELS = new Set<NodeType>(["skill", "company"]);
+
 const clip = (s: string, n = 22) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
 /**
@@ -91,6 +94,13 @@ export function GraphView({ graph }: { graph: LaidOutGraph }) {
   const [hidden, setHidden] = useState<Set<NodeType>>(new Set());
   const [selected, setSelected] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
+  const scroller = useRef<HTMLDivElement>(null);
+
+  // On a narrow screen the picture is wider than the box, so start with the centre in view.
+  useEffect(() => {
+    const el = scroller.current;
+    if (el) el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+  }, [zoom]);
 
   const present = useMemo(
     () =>
@@ -164,7 +174,7 @@ export function GraphView({ graph }: { graph: LaidOutGraph }) {
         </ul>
       </fieldset>
 
-      <div className="grid items-start gap-4 lg:grid-cols-[1fr_20rem]">
+      <div className="flex flex-col gap-4">
         <div className="border-border bg-surface relative overflow-hidden rounded-lg border">
           <div className="border-border flex items-center justify-between gap-2 border-b px-3 py-2">
             <p className="text-subtle text-xs" aria-live="polite">
@@ -209,14 +219,15 @@ export function GraphView({ graph }: { graph: LaidOutGraph }) {
             </div>
           </div>
           <div
-            className="max-h-[70vh] overflow-auto"
+            ref={scroller}
+            className="max-h-[75vh] overflow-auto"
             tabIndex={0}
             role="region"
             aria-label="Career graph"
           >
             <svg
               viewBox={`0 0 ${graph.width} ${graph.height}`}
-              style={{ width: `${zoom * 100}%`, minWidth: zoom === 1 ? undefined : "100%" }}
+              style={{ width: `${zoom * 100}%`, minWidth: `${Math.round(760 * zoom)}px` }}
               className="block h-auto"
               data-testid="graph-svg"
             >
@@ -246,19 +257,26 @@ export function GraphView({ graph }: { graph: LaidOutGraph }) {
               </g>
               {/* Labels sit under the markers and never take clicks, so a long label cannot block the item beside it. */}
               <g aria-hidden="true" className="pointer-events-none">
-                {visible.map((n) => (
-                  <text
-                    key={n.id}
-                    x={n.x}
-                    y={n.y + STYLE[n.type].r + 14}
-                    textAnchor="middle"
-                    opacity={focus !== null && !neighbours.has(n.id) ? 0.2 : 1}
-                    className="fill-foreground text-[11px]"
-                    style={{ paintOrder: "stroke", stroke: "var(--background)", strokeWidth: 3 }}
-                  >
-                    {clip(n.label)}
-                  </text>
-                ))}
+                {visible
+                  .filter(
+                    (n) =>
+                      !QUIET_LABELS.has(n.type) ||
+                      zoom >= 1.5 ||
+                      (focus !== null && neighbours.has(n.id)),
+                  )
+                  .map((n) => (
+                    <text
+                      key={n.id}
+                      x={n.x}
+                      y={n.y + STYLE[n.type].r + 14}
+                      textAnchor="middle"
+                      opacity={focus !== null && !neighbours.has(n.id) ? 0.2 : 1}
+                      className="fill-foreground text-[11px]"
+                      style={{ paintOrder: "stroke", stroke: "var(--background)", strokeWidth: 3 }}
+                    >
+                      {clip(n.label)}
+                    </text>
+                  ))}
               </g>
               <g>
                 {visible.map((n) => {
@@ -325,16 +343,29 @@ export function GraphView({ graph }: { graph: LaidOutGraph }) {
               <ul className="flex flex-col gap-1.5 text-sm" data-testid="connections">
                 {connections(selectedNode.id).map(({ edge, other, outgoing }) => (
                   <li key={`${edge.from}>${edge.to}>${edge.kind}`} className="break-words">
-                    <span className="text-muted text-xs">
-                      {outgoing ? EDGE_LABELS[edge.kind] : `${EDGE_LABELS[edge.kind]} (from)`}{" "}
-                    </span>
-                    <button
-                      type="button"
-                      className="text-accent text-left hover:underline"
-                      onClick={() => setSelected(other.id)}
-                    >
-                      {other.label}
-                    </button>
+                    {outgoing ? (
+                      <>
+                        <span className="text-muted text-xs">{EDGE_LABELS[edge.kind]} </span>
+                        <button
+                          type="button"
+                          className="text-accent text-left hover:underline"
+                          onClick={() => setSelected(other.id)}
+                        >
+                          {other.label}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="text-accent text-left hover:underline"
+                          onClick={() => setSelected(other.id)}
+                        >
+                          {other.label}
+                        </button>
+                        <span className="text-muted text-xs"> {EDGE_LABELS[edge.kind]} this</span>
+                      </>
+                    )}
                   </li>
                 ))}
                 {connections(selectedNode.id).length === 0 && (

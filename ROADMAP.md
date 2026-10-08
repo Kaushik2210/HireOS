@@ -15,7 +15,7 @@ Priority key: **Must** (MVP), **Should**, **Could**. Status is updated at each p
 | 9 | Application CRM (Kanban, transitions, events, follow-ups) | Must | Done (no drag and drop; Supabase path unverified live) |
 | 10 | Interview hub (prep, questions, Mock Interview Mode) | Should | Done (rule-based scoring; AI coach Planned; Supabase path unverified live) |
 | 11 | Career analytics (funnel, rates, "Why am I not getting interviews?", gap analyzer) | Should | Done (rule-based, hedged; no new tables) |
-| 12 | Career graph | Could | Planned |
+| 12 | Career graph | Could | Done (no new tables) |
 | 13 | Security hardening (rate limits, CSP, audit, data export/delete) | Must | Planned |
 | 14 | Testing pass (edge cases, e2e, RLS suite completion) | Must | Planned |
 | 15 | Production polish, README, screenshots | Must | Planned |
@@ -97,3 +97,6 @@ Browser extension for user-initiated page capture, calendar integration for inte
 - Career readiness combines profile completeness, the latest resume's health score and the share of the top ten jobs rated Good or Strong, with equal care for what cannot be measured yet (a missing part is left out, not guessed). The weights (40, 30, 30) are uncalibrated.
 - Analytics read live on each visit: nothing is stored or cached, so very large histories (hundreds of applications) will slow the page. The activity read is capped at 2,000 events.
 - No outcome data beyond status is modelled (for example why a rejection happened, or offer details), so there is no salary or offer analysis yet.
+- The career graph is a picture of records, not an analysis: it does not rank or score anything, and a connection means "is in your data", not "matters". Jobs shown are the ones you track plus your best matches, at most twelve, and at most six required skills per job, so it is a sample of the job market rather than all of it. Past 160 items the least connected skills are left out and the page says so.
+- The layout is a deterministic force simulation computed on the server (no randomness, so a reload does not shuffle it). With a few dozen items it is readable; with more it gets crowded and relies on the filters, zoom and the list view. Skill and company names are hidden until zoomed in or related to the selection. There is no free dragging of nodes, no saved positions and no export of the picture.
+- The graph has no history: it shows today's profile and today's matches, and cannot show how the person's skills or applications changed over time.

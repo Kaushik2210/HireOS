@@ -150,3 +150,6 @@ Limits: it is not a Supabase stack. GoTrue, PostgREST, storage policies and exte
 
 ## Analytics (Phase 11)
 No new tables. Analytics are computed on read from `applications` and `application_events` (status history and follow-up records), `document_versions` (whether a resume version was linked), `outreach_drafts` (sent count), `mock_sessions` (practice scores), `resumes` (latest health score) and the profile and jobs tables, all through the user's own client, so Row Level Security limits every figure to the person's own data. Nothing is cached or written.
+
+## Career graph (Phase 12)
+No new tables. The graph is built on read from the verified profile items, tracked jobs and applications, through the user's own client, so Row Level Security limits it to the person's own data. Nothing is stored.

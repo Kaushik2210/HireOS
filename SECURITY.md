@@ -110,6 +110,12 @@ Known limits: parsing runs in the request process (bounded, but a pathological f
 - **Bounded work.** The gap analysis scores at most 30 jobs and 12 candidate skills, the tracked-job read is capped, and the activity read is capped at 2,000 events.
 - **Found and fixed during this phase:** the demo application store seeded its sample data lazily but let a second concurrent read return before the seeding finished, so a first visit could show applications without their history. Reads now share one seeding promise, with a regression test that fails without the fix.
 
+## Implemented in Phase 12 (career graph)
+- **Read-only and private.** The graph writes nothing and adds no tables. It is built from the person's own rows through their own client and shown only to them.
+- **Verified items only.** Unconfirmed profile items never appear, and a skill a job asks for that the person lacks is drawn as a separate gap node joined to the job, never to the person. Tests cover both.
+- **Untrusted text is plain text.** Job titles and company names appear as SVG text and in the details panel, never as markup; there is no `dangerouslySetInnerHTML` and the node ids are derived values, not user input. Links go only to the app's own pages.
+- **Bounded.** At most 12 jobs, 6 required skills per job and 160 nodes are drawn; the layout is a fixed number of iterations.
+
 ## User data controls
 View, edit, export (JSON), delete resume/profile/applications, wipe demo data, delete account (cascade + storage purge).
 

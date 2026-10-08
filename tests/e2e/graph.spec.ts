@@ -57,7 +57,7 @@ test.describe("career graph", () => {
     const details = page.getByTestId("details");
     await expect(details).toContainText("Skills asked for that you lack");
     await expect(details).toContainText("not in your verified profile");
-    await expect(details.getByTestId("connections")).toContainText("asks for (you lack)");
+    await expect(details.getByTestId("connections")).toContainText("asks for (you lack) this");
     await expect(details.getByTestId("connections")).not.toContainText("has");
     await expect(details.getByRole("link", { name: "Open" })).toHaveAttribute("href", "/gaps");
   });
