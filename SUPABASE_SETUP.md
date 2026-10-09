@@ -125,3 +125,19 @@ Things worth trying once, to confirm each part works against the real service:
 Hosting the app (for example on Vercel), a custom domain, backups and the paid plan's extras are
 out of scope here. The AI, background-job and email variables in `.env.example` are optional and
 not needed for any of the steps above.
+
+## Alternative: run Supabase locally with Docker
+
+No account or cloud project is needed. Install Docker Desktop and start it, then:
+
+```bash
+npx supabase start
+```
+
+`supabase/config.toml` is already set up. The first start downloads images and applies every
+migration and the seed. Run `npx supabase status -o json` to see the local URL and keys, put
+them in `.env.local` the same way as step 2, then run `npm run supabase:check`. Stop it with
+`npx supabase stop`. The local keys are the standard demo keys and are not secrets.
+
+If port 3000 is taken, Next.js uses 3001: set `APP_URL` to match and add that address's
+`/auth/callback` to `additional_redirect_urls` in `supabase/config.toml`.
