@@ -100,3 +100,26 @@ describe("proxy", () => {
     expect(new URL(res.headers.get("location")!).pathname).toBe("/login");
   });
 });
+
+describe("proxy security policy", () => {
+  const csp = (res: Response) => res.headers.get("content-security-policy") ?? "";
+
+  it("puts a Content Security Policy on a normal page", async () => {
+    signedIn();
+    const res = await proxy(request("/dashboard"));
+    expect(csp(res)).toContain("script-src 'self' 'nonce-");
+  });
+
+  it("puts one on a redirect and on a demo-mode response too", async () => {
+    signedOut();
+    expect(csp(await proxy(request("/jobs")))).toContain("default-src 'self'");
+    env = {};
+    expect(csp(await proxy(request("/dashboard")))).toContain("default-src 'self'");
+  });
+
+  it("uses a different nonce on every request", async () => {
+    signedIn();
+    const nonce = async () => /'nonce-([^']+)'/.exec(csp(await proxy(request("/dashboard"))))![1];
+    expect(await nonce()).not.toBe(await nonce());
+  });
+});

@@ -3,21 +3,22 @@ import { NextResponse, type NextRequest } from "next/server";
 import { DEMO_COOKIE, isValidDemoId } from "@/lib/auth/demo";
 import { classifyPath, hasAuthCookie } from "@/lib/auth/route-access";
 import { getServerEnv } from "@/lib/env";
+import { buildCsp, createNonce } from "@/lib/security/headers";
 
 /**
  * Refreshes the Supabase session on every request and redirects based on route access.
  * This is the first gate only: server components, actions and route handlers
  * re-verify the user with requireUser(), and RLS enforces access in the database.
  */
-export async function proxy(request: NextRequest) {
+async function route(request: NextRequest, pass: () => NextResponse) {
   const { NEXT_PUBLIC_SUPABASE_URL: url, NEXT_PUBLIC_SUPABASE_ANON_KEY: key } = getServerEnv();
 
   // Demo mode: no auth backend, nothing to enforce. Give each visitor an isolated sandbox id.
   if (!url || !key) {
-    if (isValidDemoId(request.cookies.get(DEMO_COOKIE)?.value)) return NextResponse.next();
+    if (isValidDemoId(request.cookies.get(DEMO_COOKIE)?.value)) return pass();
     const id = crypto.randomUUID();
     request.cookies.set(DEMO_COOKIE, id); // visible to this same request's render
-    const demo = NextResponse.next({ request });
+    const demo = pass();
     demo.cookies.set(DEMO_COOKIE, id, {
       httpOnly: true,
       sameSite: "lax",
@@ -28,14 +29,14 @@ export async function proxy(request: NextRequest) {
     return demo;
   }
 
-  let response = NextResponse.next({ request });
+  let response = pass();
 
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (toSet) => {
         for (const { name, value } of toSet) request.cookies.set(name, value);
-        response = NextResponse.next({ request });
+        response = pass();
         for (const { name, value, options } of toSet) response.cookies.set(name, value, options);
       },
     },
@@ -75,6 +76,24 @@ export async function proxy(request: NextRequest) {
     return redirectTo(new URL("/dashboard", request.url));
   }
 
+  return response;
+}
+
+/**
+ * Every response carries a Content Security Policy with a fresh nonce. The nonce travels to
+ * the renderer in a request header so Next.js can stamp it on its own scripts and styles.
+ */
+export async function proxy(request: NextRequest) {
+  const nonce = createNonce();
+  const csp = buildCsp({ nonce, isDev: process.env.NODE_ENV === "development" });
+  const pass = () => {
+    const headers = new Headers(request.headers);
+    headers.set("x-nonce", nonce);
+    headers.set("Content-Security-Policy", csp);
+    return NextResponse.next({ request: { headers } });
+  };
+  const response = await route(request, pass);
+  response.headers.set("Content-Security-Policy", csp);
   return response;
 }
 
