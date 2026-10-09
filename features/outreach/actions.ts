@@ -9,6 +9,7 @@ import { OutreachStoreError } from "@/db/outreach/store";
 import { getProfileStore } from "@/db/profile";
 import type { ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
+import { limitAction } from "@/lib/security/action-limits";
 import { MAX_BODY, MAX_SUBJECT, outreachInputSchema } from "@/lib/outreach/types";
 import { prepareDraft, prepareEdit, type PrepareFailure } from "@/services/outreach/prepare";
 
@@ -46,6 +47,8 @@ export async function createDraftAction(input: unknown): Promise<ActionResult> {
   const { jobId, ...rest } = parsed.data;
 
   const user = await requireUser();
+  const limited = await limitAction(user.id, "heavy");
+  if (limited) return limited;
   let draftId: string;
   try {
     const [job, snapshot] = await Promise.all([
@@ -71,6 +74,8 @@ export async function saveDraftEditAction(input: unknown): Promise<ActionResult>
   const parsed = editInput.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Invalid request." };
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const store = await getOutreachStore(user);
     const draft = await store.get(user.id, parsed.data.id);
@@ -103,6 +108,8 @@ export async function approveDraftAction(id: string): Promise<ActionResult> {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "Unknown draft." };
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const outcome = await (await getOutreachStore(user)).approve(user.id, parsed.data);
     if (outcome === "not_found") return { ok: false, error: "That draft no longer exists." };
@@ -125,6 +132,8 @@ export async function markSentAction(id: string): Promise<ActionResult> {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "Unknown draft." };
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const outcome = await (await getOutreachStore(user)).markSent(user.id, parsed.data);
     if (outcome === "not_found") return { ok: false, error: "That draft no longer exists." };
@@ -140,6 +149,8 @@ export async function deleteDraftAction(id: string): Promise<ActionResult> {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "Unknown draft." };
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const removed = await (await getOutreachStore(user)).remove(user.id, parsed.data);
     if (!removed) return { ok: false, error: "That draft no longer exists." };

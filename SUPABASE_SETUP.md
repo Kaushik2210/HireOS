@@ -55,7 +55,7 @@ npx supabase db push
 ```
 
 The project ref is the part of your project URL before `.supabase.co`. `db push` applies the
-13 migrations in `supabase/migrations` in order.
+14 migrations in `supabase/migrations` in order.
 
 ## 4. Check the sign-in settings
 

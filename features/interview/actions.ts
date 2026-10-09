@@ -13,6 +13,7 @@ import { getProfileStore } from "@/db/profile";
 import type { ActionResult } from "@/lib/action-result";
 import { invalidResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
+import { limitAction } from "@/lib/security/action-limits";
 import {
   MAX_CHECKLIST,
   checklistAddSchema,
@@ -42,6 +43,8 @@ export async function addInterviewAction(input: unknown): Promise<ActionResult> 
   const parsed = createInterviewSchema.safeParse(input);
   if (!parsed.success) return invalidResult(parsed.error);
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   let id: string;
   try {
     const found = await (await getApplicationStore(user)).get(user.id, parsed.data.application_id);
@@ -87,6 +90,8 @@ export async function updateInterviewAction(input: unknown): Promise<ActionResul
   const parsed = updateInterviewSchema.safeParse(input);
   if (!parsed.success) return invalidResult(parsed.error);
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const outcome = await (
       await getInterviewStore(user)
@@ -113,6 +118,8 @@ async function withInterview(
   change: (items: ChecklistItem[]) => ChecklistItem[] | string,
 ): Promise<ActionResult> {
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const store = await getInterviewStore(user);
     const interview = await store.get(user.id, id);
@@ -177,6 +184,8 @@ export async function refreshChecklistAction(id: string): Promise<ActionResult> 
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "Unknown interview." };
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const store = await getInterviewStore(user);
     const interview = await store.get(user.id, parsed.data);
@@ -205,6 +214,8 @@ export async function deleteInterviewAction(id: string): Promise<ActionResult> {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "Unknown interview." };
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const removed = await (await getInterviewStore(user)).remove(user.id, parsed.data);
     if (!removed) return { ok: false, error: "That interview no longer exists." };
@@ -226,6 +237,8 @@ export async function startPracticeAction(input: unknown): Promise<ActionResult>
   if (!parsed.success)
     return { ok: false, error: "Choose a kind of practice and 3 to 10 questions." };
   const user = await requireUser();
+  const limited = await limitAction(user.id, "heavy");
+  if (limited) return limited;
   let id: string;
   try {
     const [job, snapshot, practice] = await Promise.all([
@@ -269,6 +282,8 @@ export async function submitAnswerAction(input: unknown): Promise<ActionResult> 
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Write an answer first." };
   }
   const user = await requireUser();
+  const limited = await limitAction(user.id, "heavy");
+  if (limited) return limited;
   try {
     const practice = await getPracticeStore(user);
     const found = await practice.get(user.id, parsed.data.sessionId);
@@ -306,6 +321,8 @@ export async function deletePracticeAction(id: string): Promise<ActionResult> {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "Unknown session." };
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const removed = await (await getPracticeStore(user)).remove(user.id, parsed.data);
     if (!removed) return { ok: false, error: "That session no longer exists." };

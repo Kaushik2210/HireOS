@@ -12,6 +12,7 @@ import { JobStoreError } from "@/db/jobs/store";
 import { manualJobFormSchema } from "@/features/jobs/form";
 import { invalidResult, type ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
+import { limitAction } from "@/lib/security/action-limits";
 import { MAX_PRIVATE_JOBS } from "@/lib/jobs/constants";
 import { normalizeRawJob } from "@/services/jobs/normalize";
 import { MANUAL_SOURCE } from "@/services/jobs/providers/registry";
@@ -27,6 +28,8 @@ export async function addJobAction(input: unknown): Promise<ActionResult> {
   if (!parsed.success) return invalidResult(parsed.error);
 
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   const store = await getJobStore(user);
 
   let createdId: string;
@@ -73,6 +76,8 @@ export async function deleteJobAction(id: string): Promise<ActionResult> {
   if (!parsed.success) return { ok: false, error: "Unknown job." };
 
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const deleted = await (await getJobStore(user)).deletePrivate(user.id, parsed.data);
     if (!deleted)
@@ -96,6 +101,8 @@ export async function deleteJobAction(id: string): Promise<ActionResult> {
 export async function setDemoHiddenAction(hidden: boolean): Promise<ActionResult> {
   if (typeof hidden !== "boolean") return { ok: false, error: "Invalid request." };
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     await (await getJobStore(user)).setDemoHidden(user.id, hidden);
   } catch {

@@ -31,10 +31,10 @@ export async function POST(request: NextRequest) {
   if (!user) return json({ error: "Please sign in again.", code: "auth" }, 401);
 
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const userLimit = uploadByUser.check(user.id);
+  const userLimit = await uploadByUser.check(user.id);
   // Without a forwarded address (local runs) everyone would share one bucket, so only the
   // per-user limit applies. Deployed platforms always set the header.
-  const ipLimit = ip ? uploadByIp.check(ip) : { ok: true, retryAfterMs: 0 };
+  const ipLimit = ip ? await uploadByIp.check(ip) : { ok: true, retryAfterMs: 0 };
   if (!userLimit.ok || !ipLimit.ok) {
     const retry = Math.ceil(Math.max(userLimit.retryAfterMs, ipLimit.retryAfterMs) / 1000);
     return json(

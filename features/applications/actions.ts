@@ -16,6 +16,7 @@ import {
   updateDetailsSchema,
 } from "@/lib/applications/types";
 import { requireUser } from "@/lib/auth/session";
+import { limitAction } from "@/lib/security/action-limits";
 
 const idSchema = z.uuid();
 
@@ -32,6 +33,8 @@ export async function trackJobAction(input: unknown): Promise<ActionResult> {
   const parsed = createApplicationSchema.safeParse(input);
   if (!parsed.success) return invalidResult(parsed.error);
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const job = await (await getJobStore(user)).get(user.id, parsed.data.jobId);
     if (!job) return { ok: false, error: "That job no longer exists." };
@@ -68,6 +71,8 @@ export async function moveApplicationAction(input: unknown): Promise<ActionResul
   const parsed = changeStatusSchema.safeParse(input);
   if (!parsed.success) return invalidResult(parsed.error);
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const outcome = await (
       await getApplicationStore(user)
@@ -88,6 +93,8 @@ export async function updateDetailsAction(input: unknown): Promise<ActionResult>
   const parsed = updateDetailsSchema.safeParse(input);
   if (!parsed.success) return invalidResult(parsed.error);
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const store = await getApplicationStore(user);
     const current = await store.get(user.id, parsed.data.id);
@@ -127,6 +134,8 @@ export async function addEventAction(input: unknown): Promise<ActionResult> {
   const parsed = addEventSchema.safeParse(input);
   if (!parsed.success) return invalidResult(parsed.error);
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const outcome = await (
       await getApplicationStore(user)
@@ -144,6 +153,8 @@ export async function deleteApplicationAction(id: string): Promise<ActionResult>
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "Unknown application." };
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const removed = await (await getApplicationStore(user)).remove(user.id, parsed.data);
     if (!removed) return { ok: false, error: "That application no longer exists." };
@@ -159,6 +170,8 @@ export async function deleteApplicationAction(id: string): Promise<ActionResult>
 /** Clears the sample applications in demo mode. The ones the visitor added stay. */
 export async function wipeDemoApplicationsAction(): Promise<ActionResult> {
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   if (!user.isDemo) return { ok: false, error: "There is no sample data to clear." };
   try {
     await getDemoApplicationStore().wipeDemo(user.id);

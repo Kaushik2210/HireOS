@@ -9,6 +9,7 @@ import { getJobStore } from "@/db/jobs";
 import { getProfileStore } from "@/db/profile";
 import type { ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
+import { limitAction } from "@/lib/security/action-limits";
 import { MAX_DOCUMENT_TEXT } from "@/lib/tailoring/types";
 import {
   prepareLetterVersion,
@@ -56,6 +57,8 @@ async function save(
   jobId: string,
 ): Promise<ActionResult> {
   if (!prepared.ok) return { ok: false, error: PREPARE_ERRORS[prepared.reason] };
+  const limited = await limitAction(userId, "heavy");
+  if (limited) return limited;
   try {
     const created = await (await getDocumentStore(user)).create(userId, prepared.input);
     // No revalidate here: the redirect target is rendered fresh (see the jobs actions).
@@ -115,6 +118,8 @@ export async function approveVersionAction(id: string): Promise<ActionResult> {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "Unknown document." };
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const outcome = await (await getDocumentStore(user)).approve(user.id, parsed.data);
     if (outcome === "not_found") return { ok: false, error: "That document no longer exists." };
@@ -136,6 +141,8 @@ export async function deleteVersionAction(id: string): Promise<ActionResult> {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "Unknown document." };
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const removed = await (await getDocumentStore(user)).remove(user.id, parsed.data);
     if (!removed) return { ok: false, error: "That document no longer exists." };

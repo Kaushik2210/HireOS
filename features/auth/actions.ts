@@ -53,7 +53,9 @@ export async function signInAction(input: unknown, next?: string): Promise<Actio
   if (!supabase) return NOT_CONFIGURED;
 
   const ip = await getClientIp();
-  if (!signInByIp.check(ip).ok || !signInByEmail.check(parsed.data.email).ok) return TOO_MANY;
+  if (!(await signInByIp.check(ip)).ok || !(await signInByEmail.check(parsed.data.email)).ok) {
+    return TOO_MANY;
+  }
 
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (isBackendFailure(error)) return UNAVAILABLE;
@@ -77,7 +79,7 @@ export async function signUpAction(input: unknown): Promise<ActionResult> {
   const supabase = await createSupabaseServerClient();
   if (!supabase) return NOT_CONFIGURED;
 
-  if (!signUpByIp.check(await getClientIp()).ok) return TOO_MANY;
+  if (!(await signUpByIp.check(await getClientIp())).ok) return TOO_MANY;
 
   const appUrl = getAppUrl();
   if (!appUrl) return { ok: false, error: "Sign-up is temporarily unavailable." };
@@ -119,7 +121,10 @@ export async function requestPasswordResetAction(input: unknown): Promise<Action
   const supabase = await createSupabaseServerClient();
   if (!supabase) return NOT_CONFIGURED;
 
-  if (!resetByIp.check(await getClientIp()).ok || !resetByEmail.check(parsed.data.email).ok) {
+  if (
+    !(await resetByIp.check(await getClientIp())).ok ||
+    !(await resetByEmail.check(parsed.data.email)).ok
+  ) {
     return TOO_MANY;
   }
 

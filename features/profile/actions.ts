@@ -6,6 +6,7 @@ import { getDemoProfileStore, getProfileStore } from "@/db/profile";
 import { StoreError } from "@/db/profile/store";
 import { invalidResult, type ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
+import { limitAction } from "@/lib/security/action-limits";
 import { MAX_ITEMS_PER_COLLECTION } from "@/lib/profile/constants";
 import {
   COLLECTION_ENTITIES,
@@ -42,6 +43,8 @@ export async function saveItemAction(
   if (itemId && !itemId.success) return { ok: false, error: "Unknown item." };
 
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   const parsed = collectionSchemas[entity.data].safeParse(input);
   if (!parsed.success) return invalidResult(parsed.error);
   const data = parsed.data as Record<string, unknown>;
@@ -86,6 +89,8 @@ export async function deleteItemAction(entityInput: string, id: string): Promise
   if (!entity.success || !itemId.success) return { ok: false, error: "Unknown item." };
 
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const store = await getProfileStore(user);
     const deleted = await store.deleteItem(user.id, entity.data as CollectionEntity, itemId.data);
@@ -101,6 +106,8 @@ export async function saveProfileAction(input: unknown): Promise<ActionResult> {
   const parsed = profileSchema.safeParse(input);
   if (!parsed.success) return invalidResult(parsed.error);
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     await (await getProfileStore(user)).saveSingleton(user.id, "profiles", parsed.data);
   } catch {
@@ -114,6 +121,8 @@ export async function saveGoalsAction(input: unknown): Promise<ActionResult> {
   const parsed = careerGoalSchema.safeParse(input);
   if (!parsed.success) return invalidResult(parsed.error);
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     await (await getProfileStore(user)).saveSingleton(user.id, "career_goals", parsed.data);
   } catch {
@@ -126,6 +135,8 @@ export async function saveGoalsAction(input: unknown): Promise<ActionResult> {
 /** Demo mode only: replace the sandbox with one of the fictional personas. */
 export async function loadDemoPersonaAction(personaId: string): Promise<ActionResult> {
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   if (!user.isDemo) return { ok: false, error: "Demo data is only available in demo mode." };
   if (!getPersona(personaId)) return { ok: false, error: "Unknown demo profile." };
   await getDemoProfileStore().loadPersona(user.id, personaId);
@@ -136,6 +147,8 @@ export async function loadDemoPersonaAction(personaId: string): Promise<ActionRe
 /** Demo mode only: empty the sandbox so you can start from a blank profile. */
 export async function wipeDemoDataAction(): Promise<ActionResult> {
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   if (!user.isDemo) return { ok: false, error: "Demo data is only available in demo mode." };
   await getDemoProfileStore().wipe(user.id);
   refresh();
@@ -149,6 +162,8 @@ export async function confirmItemAction(entityInput: string, id: string): Promis
   if (!entity.success || !itemId.success) return { ok: false, error: "Unknown item." };
 
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const confirmed = await (
       await getProfileStore(user)
@@ -164,6 +179,8 @@ export async function confirmItemAction(entityInput: string, id: string): Promis
 /** Confirm everything awaiting review. The UI asks the user to look first. */
 export async function confirmAllAction(): Promise<ActionResult> {
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const changed = await (await getProfileStore(user)).confirmAll(user.id);
     refresh();

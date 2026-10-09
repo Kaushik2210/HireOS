@@ -7,6 +7,7 @@ import { getResumeStore } from "@/db/resume";
 import { StoreError } from "@/db/profile/store";
 import type { ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
+import { limitAction } from "@/lib/security/action-limits";
 import { applyImportPlan, buildImportPlan } from "@/services/resume/import";
 
 const idSchema = z.uuid();
@@ -16,6 +17,8 @@ export async function deleteResumeAction(id: string): Promise<ActionResult> {
   if (!parsed.success) return { ok: false, error: "Unknown resume." };
 
   const user = await requireUser();
+  const limited = await limitAction(user.id);
+  if (limited) return limited;
   try {
     const deleted = await (await getResumeStore(user)).delete(user.id, parsed.data);
     if (!deleted) return { ok: false, error: "That resume no longer exists." };
@@ -35,6 +38,8 @@ export async function importResumeAction(id: string): Promise<ActionResult> {
   if (!parsed.success) return { ok: false, error: "Unknown resume." };
 
   const user = await requireUser();
+  const limited = await limitAction(user.id, "heavy");
+  if (limited) return limited;
   try {
     const resume = await (await getResumeStore(user)).get(user.id, parsed.data);
     if (!resume) return { ok: false, error: "That resume no longer exists." };
