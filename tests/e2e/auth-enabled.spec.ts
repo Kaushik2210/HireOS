@@ -165,3 +165,17 @@ test("the jobs pages are protected", async ({ page }) => {
   await page.goto("/jobs/11111111-1111-4111-8111-111111111111");
   await expect(page).toHaveURL(/\/login\?next=/);
 });
+
+test("the privacy page is protected, and the export refuses a signed-out request", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/settings");
+  await expect(page).toHaveURL(/\/login\?next=%2Fsettings$/);
+
+  const res = await request.post("/api/account/export", {
+    headers: { origin: "http://localhost:3101" },
+  });
+  expect(res.status()).toBe(401);
+  expect(res.headers()["cache-control"]).toBe("no-store");
+});

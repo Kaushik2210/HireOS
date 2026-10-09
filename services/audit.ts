@@ -6,7 +6,10 @@ export type AuditAction =
   | "auth.sign_in_failed"
   | "auth.sign_out"
   | "auth.password_reset_requested"
-  | "auth.password_updated";
+  | "auth.password_updated"
+  | "auth.sign_out_all"
+  | "account.exported"
+  | "account.deleted";
 
 export interface AuditClient {
   from(table: "audit_logs"): {

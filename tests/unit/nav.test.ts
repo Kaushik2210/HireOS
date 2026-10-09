@@ -23,6 +23,7 @@ describe("navigation registry", () => {
       "analytics",
       "gaps",
       "graph",
+      "settings",
     ]);
   });
 

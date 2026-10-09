@@ -10,6 +10,7 @@ import { signInSchema } from "@/lib/auth/schemas";
 
 const NOTICES: Record<string, string> = {
   expired: "Your session expired. Sign in again to continue.",
+  deleted: "Your account and its data have been deleted.",
   callback: "That link is invalid or has expired. Request a new one and try again.",
 };
 

@@ -10,6 +10,7 @@ import {
   Network,
   Rocket,
   Send,
+  ShieldCheck,
   Target,
   UserRound,
   type LucideIcon,
@@ -95,6 +96,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: Network,
     status: "live",
     phase: 12,
+  },
+  {
+    id: "settings",
+    label: "Privacy & Data",
+    href: "/settings",
+    icon: ShieldCheck,
+    status: "live",
+    phase: 13,
   },
   {
     id: "autopilot",
