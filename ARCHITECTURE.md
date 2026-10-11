@@ -120,7 +120,9 @@ Importing parsed items is a separate, explicit step: items enter the profile as 
 ## Cross-cutting
 - **Config**: typed env loader; the app boots with no keys (demo mode), features degrade to explicit "configure" states.
 - **Errors**: typed `Result`/error classes; no raw error text to clients; no PII in logs.
-- **Rate limiting**: per-user and per-IP on AI and upload endpoints.
+- **Rate limiting**: per-user and per-IP on auth, upload, export and deletion, and a per-person cap on every write action (`lib/security/limits.ts`, `action-limits.ts`). Counters live in Postgres through `rate_limit_hit()` when the service role is configured and in memory otherwise.
+- **Security headers**: `proxy.ts` mints a nonce per request and sets the Content Security Policy; `next.config.ts` sets the fixed headers. Pages are rendered per request.
+- **Account controls**: `services/account` builds the JSON export through the user's own stores, deletes uploaded files and then the auth user, and lists recent security events; `/settings` and `/api/account/export` expose them.
 - **Audit**: security-relevant actions write `audit_logs`.
 - **Background jobs**: idempotent, resumable steps; Autopilot ends in an approval queue.
 - **Providers**: `JobProvider` registry; each adapter documents its terms-of-use basis.

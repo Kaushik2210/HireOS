@@ -29,10 +29,10 @@ Resumes are sensitive PII. Security is a feature, designed in from phase 1.
 - Zod validation on client and server; password 10-72 chars with a letter and a number; Supabase leaked-password protection errors are surfaced.
 - No account enumeration on sign-in, sign-up or reset; identical responses and messages.
 - Open-redirect protection on every `next` value.
-- Per-IP and per-email rate limits on sign-in, sign-up and reset (in memory, per instance; shared store planned for Phase 13).
+- Per-IP and per-email rate limits on sign-in, sign-up and reset (shared across instances since Phase 13).
 - Audit events for sign-in, failure, sign-up, sign-out, reset request and password change, with no emails or credentials, in an append-only table.
 - A backend outage is reported as unavailable, not as bad credentials.
-- Not yet done: CSP and security headers, MFA, account deletion, session management UI (Phase 13).
+- Added in Phase 13: CSP and security headers, sign out everywhere, account deletion. Still Planned: two-step sign-in (MFA).
 
 ## Implemented in Phase 3 (profile)
 - RLS on all eight profile tables with two-user isolation tests; least-privilege column grants.
@@ -116,8 +116,21 @@ Known limits: parsing runs in the request process (bounded, but a pathological f
 - **Untrusted text is plain text.** Job titles and company names appear as SVG text and in the details panel, never as markup; there is no `dangerouslySetInnerHTML` and the node ids are derived values, not user input. Links go only to the app's own pages.
 - **Bounded.** At most 12 jobs, 6 required skills per job and 160 nodes are drawn; the layout is a fixed number of iterations.
 
+## Implemented in Phase 13 (security hardening)
+- **Content Security Policy with a per-request nonce** (`proxy.ts`, `lib/security/headers.ts`). Scripts run only if they carry the nonce, with `'strict-dynamic'`; no `unsafe-inline` or `unsafe-eval` in production. `object-src`, `frame-src` and `frame-ancestors` are `'none'`, `base-uri` and `form-action` are `'self'`, and `connect-src` is `'self'` because every Supabase call is made on the server. The one relaxation is `style-src-attr 'unsafe-inline'` for inline style attributes (progress-bar widths), which cannot run script. Every page is rendered per request so the nonce can be applied. A browser test loads every main page and the command palette against a production build and asserts that nothing is blocked; it caught the validation library probing `eval`, which is now switched off in the browser (`instrumentation-client.ts`).
+- **Fixed headers** (`next.config.ts`): `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy` (camera, microphone, geolocation, payment and others off), cross-origin opener and resource policies, and HSTS in production.
+- **Shared rate limits.** `rate_limit_hit()` keeps one counter per key in Postgres, callable only by the service role, so every instance agrees and a restart no longer resets the counts. Keys are hashed before they leave the process, so no email address or IP address is stored. If the database cannot be reached the limiter falls back to per-instance counters instead of refusing everyone. Applies to sign-in, sign-up, reset, uploads, export and deletion.
+- **Per-person limits on every write action.** 180 changes a minute and 60 builds an hour (document versions, drafts, practice, imports). Generous for a human, there to stop a script. The refusal message does not reveal the numbers.
+- **Privacy & Data page.** Download everything as one JSON file (built through the person's own stores, so Row Level Security limits it to their rows; POST only, same-origin checked, no-store, five an hour); sign out of every device; see recent security events; delete the account. Deletion needs a typed confirmation, only ever acts on the signed-in person, removes uploaded files first and leaves the account untouched if that fails, then deletes the auth record, which cascades to every table. Audit rows stay with the user detached. Verified against a real local Supabase.
+- **Audit.** New events for export, deletion and sign-out everywhere. Still only an action, a time and an id; never an email, password or content.
+- **Source-level guards** (`tests/unit/security-static.test.ts`): no `dangerouslySetInnerHTML`, `eval`, `new Function`, `innerHTML` or `document.write`; only error-level logging; the process environment read in one module; only the two Supabase values are browser-visible; the service-role key is used in one file and its client imported from three; client components import no server code; every server action resolves the user, is rate limited and validates its input; every changing route checks the origin and answers only signed-in callers. Negative controls proved each fails when the rule is broken.
+- **Auth callback** redirects to the configured `APP_URL` rather than the request's own origin.
+- **Dependencies.** `npm audit --omit=dev` reports no vulnerabilities.
+
+Known limits: the client address comes from `X-Forwarded-For`, which is only trustworthy behind a proxy that sets it (hosted platforms do), so per-address limits can be dodged by someone reaching the server directly; per-email limits still apply. Two-step sign-in, a recent-sign-in check before deletion, email notices for security events and a scanner for uploaded files are not built. Counters are fixed windows, so a burst at a window edge can briefly double the allowance. The Supabase Auth settings that matter (confirm email, leaked-password protection, redirect allow-list) are dashboard settings the app can only document, not enforce.
+
 ## User data controls
-View, edit, export (JSON), delete resume/profile/applications, wipe demo data, delete account (cascade + storage purge).
+View, edit, export (JSON), delete resume/profile/applications, wipe demo data, delete account (cascade + storage purge). All built; see Privacy & Data above.
 
 ## Data handling
 Resumes stored privately and retained until the user deletes them. Only the minimum data goes to the LLM per task, and the provider and what is sent are disclosed in-app. Users can run without any LLM key.

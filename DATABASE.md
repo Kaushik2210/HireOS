@@ -153,3 +153,6 @@ No new tables. Analytics are computed on read from `applications` and `applicati
 
 ## Career graph (Phase 12)
 No new tables. The graph is built on read from the verified profile items, tracked jobs and applications, through the user's own client, so Row Level Security limits it to the person's own data. Nothing is stored.
+
+## Rate limits (Phase 13)
+`rate_limits` holds one fixed-window counter per key: `key` (a hashed, namespaced digest, never an address), `hits` and `reset_at`. Row Level Security is on and no policy exists, and `anon` and `authenticated` hold no grants, so the table is unreachable through the API. `rate_limit_hit(key, limit, window_ms)` is the only way in: it is `security definer`, executable by the service role alone, counts one hit atomically (a single upsert), stops counting one past the limit, rejects nonsense settings, and now and then deletes windows that ended more than an hour ago. Tests cover the limit, key separation, window expiry, the cap, the grants and a negative control that loosens them.

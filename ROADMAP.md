@@ -16,7 +16,7 @@ Priority key: **Must** (MVP), **Should**, **Could**. Status is updated at each p
 | 10 | Interview hub (prep, questions, Mock Interview Mode) | Should | Done (rule-based scoring; AI coach Planned; Supabase path unverified live) |
 | 11 | Career analytics (funnel, rates, "Why am I not getting interviews?", gap analyzer) | Should | Done (rule-based, hedged; no new tables) |
 | 12 | Career graph | Could | Done (no new tables) |
-| 13 | Security hardening (rate limits, CSP, audit, data export/delete) | Must | Planned |
+| 13 | Security hardening (rate limits, CSP, audit, data export/delete) | Must | Done (MFA Planned; see known issues) |
 | 14 | Testing pass (edge cases, e2e, RLS suite completion) | Must | Planned |
 | 15 | Production polish, README, screenshots | Must | Planned |
 
@@ -35,9 +35,10 @@ Browser extension for user-initiated page capture, calendar integration for inte
 ## Known issues
 - `npm audit` reports 8 advisories, all in the dev-only Vitest toolchain (none in production dependencies; CI gates on `npm audit --omit=dev`). Upgrading Vitest is blocked by peer-dependency conflicts; revisit when the ecosystem catches up.
 - Authentication has not been exercised against a real Supabase project. Covered instead: action logic against a mocked client, the proxy, migrations and RLS on PGlite, and routing/validation/outage behavior end to end. Verify sign-up, email confirmation, reset and sign-out against a real project before relying on it. Supabase Auth settings to check: email confirmation on, leaked-password protection on, redirect URL allow-list includes `APP_URL`/auth/callback.
-- No Docker on the primary dev machine, so migrations are verified on PGlite rather than the Supabase CLI stack. A CI job running `supabase start` and `supabase db reset` is planned.
-- Rate limits are in memory per server instance (Phase 13 moves them to a shared store).
-- Account deletion and OAuth providers are Planned.
+- Migrations are verified on PGlite in the test suite and, by hand, on a local Supabase stack (`npx supabase start`). A CI job running `supabase start` and `supabase db reset` is planned.
+- Rate limits are shared through the database when the service role key is set, and fall back to per-instance memory otherwise or when the database is unreachable. The client address is read from `X-Forwarded-For`, so per-address limits are only as trustworthy as the proxy in front of the app.
+- OAuth providers and two-step sign-in (MFA) are Planned. Account deletion is built and does not ask for the password again.
+- The Content Security Policy allows inline style attributes (`style-src-attr 'unsafe-inline'`); removing that means replacing the few inline widths with classes or CSS variables set another way.
 - The Supabase profile store (`db/profile/supabase-store.ts`) is tested against a fake client for query shape and error mapping, and the schema and RLS are tested on PGlite, but the two have not been exercised together against a real Supabase project. Verify create, edit, delete and isolation with two real accounts.
 - Demo sandboxes live in server memory: they reset on restart and are not shared across serverless instances.
 - Profile items have no import path yet; resume parsing (Phase 4) will create unconfirmed items, and a confirm-all UI lands with it.
