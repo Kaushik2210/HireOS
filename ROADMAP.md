@@ -17,7 +17,7 @@ Priority key: **Must** (MVP), **Should**, **Could**. Status is updated at each p
 | 11 | Career analytics (funnel, rates, "Why am I not getting interviews?", gap analyzer) | Should | Done (rule-based, hedged; no new tables) |
 | 12 | Career graph | Could | Done (no new tables) |
 | 13 | Security hardening (rate limits, CSP, audit, data export/delete) | Must | Done (MFA Planned; see known issues) |
-| 14 | Testing pass (edge cases, e2e, RLS suite completion) | Must | Planned |
+| 14 | Testing pass (edge cases, e2e, RLS suite completion) | Must | Done (live suite written, not yet run; see known issues) |
 | 15 | Production polish, README, screenshots | Must | Planned |
 
 ## MVP definition
@@ -103,3 +103,6 @@ Browser extension for user-initiated page capture, calendar integration for inte
 - The graph has no history: it shows today's profile and today's matches, and cannot show how the person's skills or applications changed over time.
 
 - Live check against a local Supabase stack (Docker, `npx supabase start`): all 15 migrations apply on a fresh database, `npm run supabase:check` passes, email sign-up lands on the dashboard, and two accounts cannot read or change each other's `users` row. Not yet exercised live: the profile, resume upload, jobs, tailoring, outreach, CRM and interview stores, email confirmation and password reset. The "unverified live" notes above still apply to those.
+- The live suite (`npm run test:live`, see TESTING.md) covers the profile, job, resume (with storage) and application stores against a real local Supabase. It was written when Docker would not start on the development machine, so it type-checks and is committed but has not been executed; run it before relying on it. The documents, outreach, interview, practice and match stores are not in it yet.
+- Automated accessibility checks (axe) pass on every main page at desktop and phone width. They find a fraction of real problems: keyboard-only and screen-reader use have not been tested by a person.
+- Phase 14 found and fixed two quadratic-time patterns (markup stripping and email/salary scans in job and resume text); robustness tests now guard every text-handling function against unclosed markup, long unbroken words and floods of blank lines.
