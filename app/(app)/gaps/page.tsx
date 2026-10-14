@@ -138,7 +138,7 @@ export default async function GapsPage() {
                           <Link
                             href="/interviews"
                             prefetch={false}
-                            className="text-accent hover:underline"
+                            className="text-accent underline underline-offset-2 hover:no-underline"
                           >
                             Practise {p.skill} questions
                           </Link>

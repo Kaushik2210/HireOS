@@ -87,7 +87,7 @@ export function TopOpportunities({
       <Link
         prefetch={false}
         href="/matches"
-        className="text-accent mt-3 inline-block text-xs hover:underline"
+        className="text-accent mt-3 inline-block text-xs underline underline-offset-2 hover:no-underline"
       >
         See all matches
       </Link>

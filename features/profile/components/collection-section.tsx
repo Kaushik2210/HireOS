@@ -99,7 +99,7 @@ function ItemCard({ entity, item }: { entity: CollectionEntity; item: AnyItem })
           href={summary.link.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-accent mt-3 inline-flex items-center gap-1 text-xs hover:underline"
+          className="text-accent mt-3 inline-flex items-center gap-1 text-xs underline underline-offset-2 hover:no-underline"
         >
           {summary.link.label}
           <ExternalLink className="size-3" aria-hidden="true" />

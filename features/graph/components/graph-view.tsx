@@ -348,7 +348,7 @@ export function GraphView({ graph }: { graph: LaidOutGraph }) {
                         <span className="text-muted text-xs">{EDGE_LABELS[edge.kind]} </span>
                         <button
                           type="button"
-                          className="text-accent text-left hover:underline"
+                          className="text-accent text-left underline underline-offset-2 hover:no-underline"
                           onClick={() => setSelected(other.id)}
                         >
                           {other.label}
@@ -358,7 +358,7 @@ export function GraphView({ graph }: { graph: LaidOutGraph }) {
                       <>
                         <button
                           type="button"
-                          className="text-accent text-left hover:underline"
+                          className="text-accent text-left underline underline-offset-2 hover:no-underline"
                           onClick={() => setSelected(other.id)}
                         >
                           {other.label}

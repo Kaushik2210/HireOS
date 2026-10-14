@@ -163,7 +163,11 @@ export default async function InterviewHubPage() {
             ) : (
               <p className="text-muted text-sm">
                 Open any job and choose Practice interview.{" "}
-                <Link href="/matches" prefetch={false} className="text-accent hover:underline">
+                <Link
+                  href="/matches"
+                  prefetch={false}
+                  className="text-accent underline underline-offset-2 hover:no-underline"
+                >
                   Find a job
                 </Link>
               </p>

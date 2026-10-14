@@ -27,7 +27,10 @@ export function SignUpForm() {
       footer={
         <>
           Already registered?{" "}
-          <Link href="/login" className="text-accent hover:underline">
+          <Link
+            href="/login"
+            className="text-accent underline underline-offset-2 hover:no-underline"
+          >
             Sign in
           </Link>
         </>

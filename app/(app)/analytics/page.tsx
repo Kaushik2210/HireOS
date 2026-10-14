@@ -151,7 +151,11 @@ export default async function AnalyticsPage() {
             {finished.length === 0 ? (
               <p className="text-muted text-sm">
                 No finished practice sessions yet.{" "}
-                <Link href="/interviews" prefetch={false} className="text-accent hover:underline">
+                <Link
+                  href="/interviews"
+                  prefetch={false}
+                  className="text-accent underline underline-offset-2 hover:no-underline"
+                >
                   Open the Interview Hub
                 </Link>
               </p>

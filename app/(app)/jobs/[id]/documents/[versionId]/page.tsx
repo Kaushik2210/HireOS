@@ -147,7 +147,7 @@ export default async function VersionPage({
               <Link
                 prefetch={false}
                 href={`/jobs/${job.id}/documents/${version.id}`}
-                className="text-accent text-xs hover:underline"
+                className="text-accent text-xs underline underline-offset-2 hover:no-underline"
               >
                 Hide comparison
               </Link>

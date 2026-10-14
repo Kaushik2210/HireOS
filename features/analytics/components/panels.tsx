@@ -161,7 +161,11 @@ function FindingCard({ f }: { f: Finding }) {
           {f.href && (
             <>
               {" "}
-              <Link href={f.href} prefetch={false} className="text-accent hover:underline">
+              <Link
+                href={f.href}
+                prefetch={false}
+                className="text-accent underline underline-offset-2 hover:no-underline"
+              >
                 Open
               </Link>
             </>
@@ -205,7 +209,11 @@ export function InsightsPanel({
       )}
       {compact && insights.findings.length > findings.length && (
         <p className="mt-3 text-xs">
-          <Link href="/analytics" prefetch={false} className="text-accent hover:underline">
+          <Link
+            href="/analytics"
+            prefetch={false}
+            className="text-accent underline underline-offset-2 hover:no-underline"
+          >
             See all {insights.findings.length} findings
           </Link>
         </p>

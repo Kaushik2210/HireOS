@@ -119,7 +119,11 @@ export default async function DashboardPage() {
           </h2>
           <div className="flex items-center gap-2">
             {user.isDemo && <Badge variant="accent">Demo data</Badge>}
-            <Link prefetch={false} href="/profile" className="text-accent text-xs hover:underline">
+            <Link
+              prefetch={false}
+              href="/profile"
+              className="text-accent text-xs underline underline-offset-2 hover:no-underline"
+            >
               Open profile
             </Link>
           </div>

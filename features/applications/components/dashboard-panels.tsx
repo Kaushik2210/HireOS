@@ -46,7 +46,7 @@ export function PipelineSummaryPanel({ summary }: { summary: PipelineSummary }) 
       <Link
         href="/applications"
         prefetch={false}
-        className="text-accent mt-3 inline-block text-xs hover:underline"
+        className="text-accent mt-3 inline-block text-xs underline underline-offset-2 hover:no-underline"
       >
         Open the board
       </Link>

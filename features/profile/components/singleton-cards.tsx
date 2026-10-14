@@ -107,7 +107,7 @@ export function ProfileCard({ profile }: { profile: SingletonRecord<"profiles"> 
                 href={l.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-accent inline-flex items-center gap-1 hover:underline"
+                className="text-accent inline-flex items-center gap-1 underline underline-offset-2 hover:no-underline"
               >
                 {l.label}
                 <ExternalLink className="size-3" aria-hidden="true" />

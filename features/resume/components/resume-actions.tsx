@@ -35,7 +35,7 @@ export function ImportPanel({ resumeId, itemCount }: { resumeId: string; itemCou
           <Link
             prefetch={false}
             href="/profile#review"
-            className="text-accent text-sm hover:underline"
+            className="text-accent text-sm underline underline-offset-2 hover:no-underline"
           >
             Review on your profile
           </Link>

@@ -195,7 +195,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
               <Link
                 href={`/applications/${tracked.id}`}
                 prefetch={false}
-                className="text-accent hover:underline"
+                className="text-accent underline underline-offset-2 hover:no-underline"
               >
                 Open the application
               </Link>

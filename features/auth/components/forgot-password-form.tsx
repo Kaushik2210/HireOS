@@ -21,7 +21,7 @@ export function ForgotPasswordForm() {
       title="Reset your password"
       description="Enter your email and we will send a reset link."
       footer={
-        <Link href="/login" className="text-accent hover:underline">
+        <Link href="/login" className="text-accent underline underline-offset-2 hover:no-underline">
           Back to sign in
         </Link>
       }
