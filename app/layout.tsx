@@ -9,7 +9,10 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 export const metadata: Metadata = {
   title: { default: "HireOS", template: "%s · HireOS" },
-  description: "An AI operating system for getting hired.",
+  description:
+    "Find roles, see why they fit, tailor materials truthfully, and keep every application in one place. Nothing is sent without you.",
+  applicationName: "HireOS",
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {

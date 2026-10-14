@@ -1,9 +1,9 @@
 /**
  * Fixed-window in-memory rate limiter.
  *
- * Scope: per server instance. On serverless platforms each instance keeps its own
- * counters, so this is a best-effort brake against credential stuffing, not a global
- * guarantee. Phase 13 moves limits to a shared store.
+ * Scope: per server instance. This is the local engine behind the shared limiter in
+ * lib/security/limits.ts, which uses the database when it is available and falls back to
+ * these counters when it is not (demo mode, local runs, or an unreachable database).
  */
 export interface RateLimitResult {
   ok: boolean;

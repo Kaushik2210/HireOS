@@ -373,11 +373,16 @@ export function buildResume(
       return false;
     })
     .map((e) => {
-      const fields = e.field_of_study
+      // "Master of Computer Applications" already names its field: saying it twice reads badly.
+      const field =
+        e.field_of_study && !e.degree.toLowerCase().includes(e.field_of_study.toLowerCase())
+          ? e.field_of_study
+          : null;
+      const fields = field
         ? ["degree", "field_of_study", "institution"]
         : ["degree", "institution"];
-      const text = e.field_of_study
-        ? `${e.degree} in ${e.field_of_study}, ${e.institution}`
+      const text = field
+        ? `${e.degree} in ${field}, ${e.institution}`
         : `${e.degree}, ${e.institution}`;
       return {
         ref: entryRef("education", e.id),

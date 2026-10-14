@@ -8,11 +8,14 @@ export type RouteAccess =
 
 const GUEST_ONLY = new Set(["/login", "/signup", "/forgot-password"]);
 const PUBLIC_PREFIXES = ["/auth/"];
+/** Exact paths a crawler or browser asks for before anything else. */
+const PUBLIC_PATHS = new Set(["/robots.txt"]);
 
 /** Default-deny: any path not listed as public is protected, including unknown ones. */
 export function classifyPath(pathname: string): RouteAccess {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   if (GUEST_ONLY.has(path)) return "guest-only";
+  if (PUBLIC_PATHS.has(path)) return "public";
   if (PUBLIC_PREFIXES.some((prefix) => path.startsWith(prefix))) return "public";
   return "protected";
 }

@@ -106,10 +106,13 @@ test.describe("interview rounds", () => {
   test("edits the details and marks the round completed", async ({ page }) => {
     await addInterview(page);
     const form = page.getByRole("form", { name: "Interview details" });
-    await form.getByLabel("Notes (optional)").fill("They asked about my SQL work.");
-    await form.getByLabel("Status").selectOption({ label: "Completed" });
-    await form.getByRole("button", { name: "Save details" }).click();
-    await expect(page.getByText("Saved.")).toBeVisible();
+    // A page that is still hydrating can drop what was typed, so repeat until it saves.
+    await expect(async () => {
+      await form.getByLabel("Notes (optional)").fill("They asked about my SQL work.");
+      await form.getByLabel("Status").selectOption({ label: "Completed" });
+      await form.getByRole("button", { name: "Save details" }).click();
+      await expect(page.getByText("Saved.")).toBeVisible({ timeout: 3000 });
+    }).toPass({ timeout: 20_000 });
 
     await page.goto("/interviews");
     await expect(page.getByText("Past and cancelled")).toBeVisible();

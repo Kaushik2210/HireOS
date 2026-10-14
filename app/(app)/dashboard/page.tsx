@@ -105,7 +105,7 @@ export default async function DashboardPage() {
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-muted mt-1 text-sm">
-          Your career command center. Modules appear here as they are built.
+          Where your search stands: what fits, what is waiting on you, and what to do next.
         </p>
       </div>
 
@@ -172,8 +172,8 @@ export default async function DashboardPage() {
         </ul>
         {caps.demoMode && (
           <p className="text-muted mt-3 text-xs">
-            Running without a data backend. Demo data arrives with the jobs phase; AI features stay
-            disabled until an API key is set.
+            Running without a data backend, so what you see is sample data in a temporary sandbox.
+            Add Supabase keys to keep your own data; AI features stay off until an API key is set.
           </p>
         )}
       </section>

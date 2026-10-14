@@ -80,8 +80,14 @@ function Swatch({ type }: { type: NodeType }) {
   );
 }
 
-/** Skills and companies are numerous, so their names appear when zoomed in or when they matter to the selection. */
-const QUIET_LABELS = new Set<NodeType>(["skill", "company"]);
+/**
+ * With dozens of items, names drawn at the default size overlap into a smear. Only the person
+ * is named at first; every other name appears when zoomed in or when it matters to the
+ * selection, and hovering an item shows its name at any zoom.
+ */
+const QUIET_LABELS = new Set<NodeType>(
+  (Object.keys(NODE_TYPE_LABELS) as NodeType[]).filter((type) => type !== "user"),
+);
 
 const clip = (s: string, n = 22) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
@@ -181,7 +187,7 @@ export function GraphView({ graph }: { graph: LaidOutGraph }) {
               {visible.length} items, {edges.length} connections
               {focus
                 ? ". Showing what is connected to your selection."
-                : ". Select an item to see what connects to it."}
+                : ". Select an item to see what connects to it, or zoom in to read names."}
             </p>
             <div className="flex items-center gap-1" role="group" aria-label="Zoom">
               <Button
@@ -315,6 +321,7 @@ export function GraphView({ graph }: { graph: LaidOutGraph }) {
                           strokeWidth={2}
                         />
                       )}
+                      <title>{n.label}</title>
                       <Mark type={n.type} />
                     </g>
                   );

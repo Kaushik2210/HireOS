@@ -270,3 +270,21 @@ describe("lineDiff", () => {
     expect(out).toHaveLength(1400);
   });
 });
+
+describe("education headings", () => {
+  it("do not repeat a field that the degree already names", async () => {
+    const { doc } = must(buildResume(await persona("asha"), null));
+    const headings = doc.education.map((e) => e.heading.text);
+    expect(headings.length).toBeGreaterThan(0);
+    for (const h of headings)
+      expect(h).not.toMatch(/Computer Applications in Computer Applications/);
+    expect(headings.some((h) => h.startsWith("Master of Computer Applications,"))).toBe(true);
+  });
+
+  it("keep the field when the degree does not name it", async () => {
+    const snap = await persona("asha");
+    snap.education[0] = { ...snap.education[0]!, degree: "B.Tech", field_of_study: "Mechanics" };
+    const { doc } = must(buildResume(snap, null));
+    expect(doc.education.map((e) => e.heading.text).join("|")).toMatch(/B\.Tech in Mechanics,/);
+  });
+});

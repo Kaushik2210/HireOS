@@ -44,6 +44,12 @@ describe("classifyPath (default deny)", () => {
     }
   });
 
+  it("serves robots.txt to everyone, and nothing that merely starts like it", () => {
+    expect(classifyPath("/robots.txt")).toBe("public");
+    expect(classifyPath("/robots.txt/extra")).toBe("protected");
+    expect(classifyPath("/robots.txt.bak")).toBe("protected");
+  });
+
   it("marks the auth callback public", () => {
     expect(classifyPath("/auth/callback")).toBe("public");
   });
