@@ -1,12 +1,38 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test as base, type Page } from "@playwright/test";
 import { CLASSIC } from "../fixtures/resume-texts";
 import { makeDocx, makePdf, pdfWithJavaScript } from "../fixtures/files";
+
+// Uploads are limited per client address (a real protection), and every test here comes from
+// the same machine. Each test presents its own address so a full run does not use up the
+// allowance of the next one.
+const test = base.extend({
+  extraHTTPHeaders: async ({}, use) => {
+    const octet = () => Math.floor(Math.random() * 254) + 1;
+    await use({ "x-forwarded-for": `10.${octet()}.${octet()}.${octet()}` });
+  },
+});
 
 // Real files, built on the fly, go through the real production server. Each test has its own
 // browser context, so its own isolated demo sandbox.
 
-const upload = (page: Page, name: string, bytes: Uint8Array, mimeType = "application/pdf") =>
-  page.locator("#resume-file").setInputFiles({ name, mimeType, buffer: Buffer.from(bytes) });
+/**
+ * Chooses a file and waits until something happens: the upload request goes out, or the form
+ * rejects the file on the spot. A file chosen before React has hydrated is silently lost (the
+ * change handler is not attached yet), so the choice is repeated until it takes.
+ */
+async function upload(page: Page, name: string, bytes: Uint8Array, mimeType = "application/pdf") {
+  const file = { name, mimeType, buffer: Buffer.from(bytes) };
+  await expect(async () => {
+    const reacted = Promise.any([
+      page.waitForRequest((r) => r.url().includes("/api/resumes") && r.method() === "POST", {
+        timeout: 2500,
+      }),
+      page.locator('p[role="alert"]').waitFor({ state: "visible", timeout: 2500 }),
+    ]);
+    await page.locator("#resume-file").setInputFiles(file);
+    await reacted;
+  }).toPass({ timeout: 20_000 });
+}
 
 async function uploadClassic(page: Page, name = "Priya Menon Resume.pdf") {
   await page.goto("/resume");

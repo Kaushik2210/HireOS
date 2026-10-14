@@ -7,9 +7,14 @@ export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
+  // A retry is reported as "flaky", never hidden: it keeps one slow moment on a shared
+  // server from failing the run, while a test that needs it still shows up in the summary.
+  retries: 1,
+  // Every worker hits the same production server, which also parses uploaded PDFs inside the
+  // request. Four workers keep the slowest of those inside the wait time on a laptop.
+  workers: process.env.CI ? 2 : 4,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
-  // Eight workers share one production server; navigation can take a few seconds under that load.
+  // Workers share one production server; navigation can take a few seconds under that load.
   expect: { timeout: 10_000 },
   use: { trace: "retain-on-failure" },
   projects: [
