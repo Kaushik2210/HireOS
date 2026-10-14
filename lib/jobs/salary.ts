@@ -50,7 +50,9 @@ function detectCurrency(text: string): string | null {
  * nothing credible is found.
  */
 export function parseSalary(text: string): Salary | null {
-  const window = text.slice(0, 6000);
+  // Whitespace is collapsed first: the patterns below allow optional runs of it between
+  // parts, and thousands of blank lines would otherwise make them backtrack for minutes.
+  const window = text.slice(0, 6000).replace(/\s+/g, " ");
   const period: Salary["period"] = /per month|\/\s*month|monthly|a month|\bpm\b/i.test(window)
     ? "month"
     : "year";

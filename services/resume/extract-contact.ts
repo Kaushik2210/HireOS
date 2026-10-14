@@ -10,7 +10,26 @@ export interface Contact {
   website_url: string | null;
 }
 
-const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/;
+const EMAIL_LOCAL_CHAR = /[A-Za-z0-9._%+-]/;
+const EMAIL_DOMAIN = /^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/;
+
+/**
+ * Finds the first email address by looking around each "@" instead of running a pattern
+ * from every position. A scan like /[A-Za-z0-9._%+-]+@.../ restarts at each character of a
+ * long unbroken word and takes time proportional to the square of its length.
+ */
+function findEmail(text: string): string | null {
+  let at = text.indexOf("@");
+  for (let tries = 0; at !== -1 && tries < 50; tries++) {
+    let start = at;
+    // A local part is at most 64 characters.
+    while (start > 0 && at - start < 64 && EMAIL_LOCAL_CHAR.test(text[start - 1]!)) start--;
+    const domain = EMAIL_DOMAIN.exec(text.slice(at + 1, at + 1 + 255));
+    if (start < at && domain) return text.slice(start, at + 1) + domain[0];
+    at = text.indexOf("@", at + 1);
+  }
+  return null;
+}
 const LINKEDIN = /(?:https?:\/\/)?(?:[a-z]{2,3}\.)?(?:www\.)?linkedin\.com\/in\/[A-Za-z0-9_%.-]+/i;
 const GITHUB = /(?:https?:\/\/)?(?:www\.)?github\.com\/[A-Za-z0-9-]+(?=$|[\s|,;)])/i;
 const WEBSITE = /(?:https?:\/\/|www\.)[^\s|,;)]+/i;
@@ -46,7 +65,7 @@ export function extractContact(headerLines: string[], fullText: string): Contact
   // Header first, then anywhere in the document as a fallback for odd layouts.
   const find = (re: RegExp) => re.exec(header)?.[0] ?? re.exec(fullText)?.[0] ?? null;
 
-  const email = find(EMAIL);
+  const email = findEmail(header) ?? findEmail(fullText);
   const linkedin = find(LINKEDIN);
   const github = GITHUB.exec(header)?.[0] ?? null;
 

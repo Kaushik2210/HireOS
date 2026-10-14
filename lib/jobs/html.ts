@@ -43,7 +43,7 @@ function codePoint(code: number, fallback: string): string {
 const BREAK_TAG = /^<\s*(?:br\b|\/\s*(?:p|div|h[1-6]|tr|ul|ol|section)\b)/i;
 const LIST_ITEM_TAG = /^<\s*li\b/i;
 const RAW_TEXT_TAG = /^<(script|style)\b/i;
-const TAG_START = /^<\/?[a-z]/i;
+const TAG_START = /^<[/!?]?[a-z]/i;
 
 /**
  * Removes tags in one pass over the text. Each position is looked at a bounded number of
@@ -51,11 +51,10 @@ const TAG_START = /^<\/?[a-z]/i;
  * square of the length, as patterns like /<[^>]*>/ and /<script[\s\S]*?<\/script>/ do on
  * hostile input.
  *
- * With `anyBracket`, every "<" that has a matching ">" is treated as a tag. Without it, only
- * "<" followed by a letter or "/" is (used after entities are decoded, so ordinary text such
- * as "a < b" survives).
+ * Only "<" followed by a letter, "/", "!" or "?" starts a tag, so ordinary text such as
+ * "experience < 5 years and salary > 10 LPA" is left alone.
  */
-function stripTags(input: string, anyBracket: boolean): string {
+function stripTags(input: string): string {
   const lower = input.toLowerCase();
   let out = "";
   let i = 0;
@@ -88,7 +87,7 @@ function stripTags(input: string, anyBracket: boolean): string {
     }
 
     const tag = input.slice(lt, nextClose + 1);
-    if (!anyBracket && !TAG_START.test(tag)) {
+    if (!TAG_START.test(tag)) {
       out += "<";
       i = lt + 1;
       continue;
@@ -130,10 +129,10 @@ export function htmlToText(input: string): string {
   // Double-escaped markup: unwrap one level so the tags below can be recognised.
   if (!/<[a-z!/]/i.test(s) && /&lt;\/?[a-z]/i.test(s)) s = decodeEntities(s);
 
-  s = stripTags(s, true);
+  s = stripTags(s);
 
   // Anything that still looks like a tag after decoding is removed too.
-  s = stripTags(decodeEntities(s), false);
+  s = stripTags(decodeEntities(s));
 
   return (
     s
