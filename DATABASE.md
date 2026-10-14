@@ -156,3 +156,6 @@ No new tables. The graph is built on read from the verified profile items, track
 
 ## Rate limits (Phase 13)
 `rate_limits` holds one fixed-window counter per key: `key` (a hashed, namespaced digest, never an address), `hits` and `reset_at`. Row Level Security is on and no policy exists, and `anon` and `authenticated` hold no grants, so the table is unreachable through the API. `rate_limit_hit(key, limit, window_ms)` is the only way in: it is `security definer`, executable by the service role alone, counts one hit atomically (a single upsert), stops counting one past the limit, rejects nonsense settings, and now and then deletes windows that ended more than an hour ago. Tests cover the limit, key separation, window expiry, the cap, the grants and a negative control that loosens them.
+
+## Function privileges (Phase 14)
+Postgres grants `execute` on new functions to everyone by default. `search_jobs` had been left open to the anonymous role (harmless, since it runs with the caller's rights and the tables behind it are closed, but untidy); migration 15 revokes that and makes "no one until granted" the default for functions created from now on. A schema-wide test (`tests/db/rls-structure.test.ts`) checks that every table is closed or fully policed, that no write policy is simply true, and that no function is callable by the anonymous role.
