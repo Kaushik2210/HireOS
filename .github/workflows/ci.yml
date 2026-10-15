@@ -43,3 +43,32 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  # The store classes against a real Supabase stack, as two real accounts, plus a check that
+  # every migration applies to a fresh database. This is the job that proves the parts the
+  # unit tests can only check against fakes.
+  live:
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start a local Supabase stack
+        run: supabase start -x studio,imgproxy,vector,logflare,edge-runtime
+      - name: Point the app at it
+        run: |
+          supabase status -o env > /tmp/supabase.env
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$(grep '^API_URL=' /tmp/supabase.env | cut -d= -f2- | tr -d '\"')"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(grep '^ANON_KEY=' /tmp/supabase.env | cut -d= -f2- | tr -d '\"')"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(grep '^SERVICE_ROLE_KEY=' /tmp/supabase.env | cut -d= -f2- | tr -d '\"')"
+          } > .env.local
+      - run: npm run supabase:check
+      - run: npm run test:live

@@ -33,7 +33,10 @@ and the first two layers.
   `settings.spec.ts` loads every main page under the production policy and fails on any blocked
   script or style.
 - `tests/live`: opt-in. It refuses to run unless the Supabase address is local, so it can never
-  create test accounts on a hosted project. It creates its own accounts and removes them.
+  create test accounts on a hosted project. It creates its own accounts and removes them. It
+  covers every store class (profile, jobs, resumes and storage, documents, outreach,
+  applications, interviews, practice, matches) as two real accounts, and is the layer that found
+  the two PostgREST upsert bugs fixed in Phase 15.
 
 ## Running the live suite
 
@@ -51,7 +54,5 @@ Keys are read from `.env.local` (see SUPABASE_SETUP.md). Stop the stack with
   catcher is not wired in.
 - **Screen readers and keyboard-only use.** Axe finds roughly a third of accessibility problems.
   Focus order and the wording read aloud still need a person.
-- **The remaining Supabase stores** (documents, outreach, interviews, practice, matches) are
-  covered against fakes and PGlite, but not yet by the live suite.
 - **Load.** Nothing measures behaviour with many users at once.
 - **Visual regressions.** There are no screenshot comparisons.
