@@ -87,12 +87,34 @@ export class SupabaseProfileStore implements ProfileStore {
     entity: E,
     data: SingletonDataMap[E],
   ): Promise<SingletonRecord<E>> {
-    const { data: saved, error } = await this.client
-      .from(entity)
-      .upsert({ ...toDbRow(entity, data as Row), user_id: userId }, { onConflict: "user_id" })
-      .select("*")
-      .single();
-    if (error) fail(error);
+    const row = toDbRow(entity, data as Row);
+    // Update, then insert if there was nothing to update. A single upsert cannot be used: its
+    // conflict branch also writes user_id, and the database grants clients no update right on
+    // that column (so a row can never be handed to another account).
+    const update = () =>
+      this.client.from(entity).update(row).eq("user_id", userId).select("*").maybeSingle();
+
+    const first = await update();
+    if (first.error) fail(first.error);
+    let saved: Row | null = first.data as Row | null;
+
+    if (!saved) {
+      const created = await this.client
+        .from(entity)
+        .insert({ ...row, user_id: userId })
+        .select("*")
+        .single();
+      if (created.error?.code === UNIQUE_VIOLATION) {
+        // Saved from another tab between our update and insert: update that row instead.
+        const retry = await update();
+        if (retry.error || !retry.data) fail(retry.error);
+        saved = retry.data as Row;
+      } else if (created.error) {
+        fail(created.error);
+      } else {
+        saved = created.data as Row;
+      }
+    }
     return fromDbRow(entity, saved as Row) as unknown as SingletonRecord<E>;
   }
 

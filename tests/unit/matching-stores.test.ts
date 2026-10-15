@@ -47,9 +47,20 @@ describe("MemoryMatchStore", () => {
   });
 });
 
-function fakeClient(opts: { row?: Record<string, unknown> | null; error?: { code: string } }) {
-  const calls: { table: string; upsert?: unknown; options?: unknown; eq: [string, unknown][] }[] =
-    [];
+function fakeClient(opts: {
+  row?: Record<string, unknown> | null;
+  error?: { code: string };
+  /** Rows an update touched; zero sends the save down the insert path. */
+  updated?: number;
+}) {
+  const calls: {
+    table: string;
+    upsert?: unknown;
+    update?: unknown;
+    insert?: unknown;
+    options?: unknown;
+    eq: [string, unknown][];
+  }[] = [];
   const client = {
     from(table: string) {
       const call: (typeof calls)[number] = { table, eq: [] };
@@ -61,6 +72,24 @@ function fakeClient(opts: { row?: Record<string, unknown> | null; error?: { code
           return chain;
         },
         maybeSingle: async () => ({ data: opts.row ?? null, error: opts.error ?? null }),
+        update: (row: unknown) => {
+          call.update = row;
+          const done = {
+            eq: (c: string, v: unknown) => {
+              call.eq.push([c, v]);
+              return done;
+            },
+            select: async () => ({
+              data: Array.from({ length: opts.updated ?? 0 }, () => ({ job_id: "j" })),
+              error: opts.error ?? null,
+            }),
+          };
+          return done;
+        },
+        insert: async (row: unknown) => {
+          call.insert = row;
+          return { error: opts.error ?? null };
+        },
         upsert: async (row: unknown, options: unknown) => {
           call.upsert = row;
           call.options = options;
@@ -74,14 +103,31 @@ function fakeClient(opts: { row?: Record<string, unknown> | null; error?: { code
 }
 
 describe("SupabaseMatchStore", () => {
-  it("upserts on user and job with every column", async () => {
+  it("updates an existing snapshot without writing its owner or job", async () => {
     const result = await sample();
-    const { client, calls } = fakeClient({});
+    const { client, calls } = fakeClient({ updated: 1 });
     await new SupabaseMatchStore(client).save("u1", "j1", result, HASH);
     const call = calls[0]!;
     expect(call.table).toBe("job_matches");
-    expect(call.options).toEqual({ onConflict: "user_id,job_id" });
-    expect(call.upsert).toMatchObject({
+    expect(call.upsert).toBeUndefined();
+    expect(call.insert).toBeUndefined();
+    expect(call.update).not.toHaveProperty("user_id");
+    expect(call.update).not.toHaveProperty("job_id");
+    expect(call.update).toMatchObject({ strength: result.strength, profile_hash: HASH });
+    expect(call.eq).toEqual([
+      ["user_id", "u1"],
+      ["job_id", "j1"],
+    ]);
+  });
+
+  it("inserts with every column when there was nothing to update", async () => {
+    const result = await sample();
+    const { client, calls } = fakeClient({ updated: 0 });
+    await new SupabaseMatchStore(client).save("u1", "j1", result, HASH);
+    // The update touched nothing, so a second query inserts the row.
+    expect(calls.some((c) => c.upsert !== undefined)).toBe(false);
+    const call = calls.find((c) => c.insert !== undefined)!;
+    expect(call.insert).toMatchObject({
       user_id: "u1",
       job_id: "j1",
       strength: result.strength,

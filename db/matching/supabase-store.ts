@@ -44,28 +44,45 @@ export class SupabaseMatchStore implements MatchStore {
   }
 
   async save(userId: string, jobId: string, result: MatchResult, profileHash: string) {
-    const { error } = await this.client.from("job_matches").upsert(
-      {
-        user_id: userId,
-        job_id: jobId,
-        scorer_version: result.scorer_version,
-        strength: result.strength,
-        label: result.label,
-        components: result.components,
-        why: result.why,
-        gaps: result.gaps,
-        keywords: result.keywords,
-        concerns: result.concerns,
-        cap: result.cap,
-        action: result.action,
-        profile_hash: profileHash,
-        computed_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,job_id" },
-    );
-    if (error) {
-      console.error("match store save failed", { code: error.code ?? "unknown" });
+    // Update, then insert if there was nothing to update. An upsert cannot be used: its
+    // conflict branch also writes user_id and job_id, which clients have no update right on.
+    const row = {
+      scorer_version: result.scorer_version,
+      strength: result.strength,
+      label: result.label,
+      components: result.components,
+      why: result.why,
+      gaps: result.gaps,
+      keywords: result.keywords,
+      concerns: result.concerns,
+      cap: result.cap,
+      action: result.action,
+      profile_hash: profileHash,
+      computed_at: new Date().toISOString(),
+    };
+    const fail = (code: string | undefined): never => {
+      console.error("match store save failed", { code: code ?? "unknown" });
       throw new Error("Match store error");
-    }
+    };
+    const update = () =>
+      this.client
+        .from("job_matches")
+        .update(row)
+        .eq("user_id", userId)
+        .eq("job_id", jobId)
+        .select("job_id");
+
+    const first = await update();
+    if (first.error) fail(first.error.code);
+    if ((first.data ?? []).length > 0) return;
+
+    const created = await this.client
+      .from("job_matches")
+      .insert({ user_id: userId, job_id: jobId, ...row });
+    if (!created.error) return;
+    if (created.error.code !== "23505") fail(created.error.code);
+    // Saved from another request in between: update that row instead.
+    const retry = await update();
+    if (retry.error) fail(retry.error.code);
   }
 }

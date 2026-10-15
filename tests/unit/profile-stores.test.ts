@@ -270,16 +270,73 @@ describe("SupabaseProfileStore", () => {
     expect(args[0]).toMatchObject({ user_id: "user-1", source: "resume", confirmed: false });
   });
 
-  it("upserts singletons on user_id", async () => {
+  it("updates an existing singleton by user_id, and never uses an upsert", async () => {
+    // An upsert would also write user_id, which the database does not let clients update.
     const { client, calls } = fakeSupabase({ data: { id: "p1", full_name: "A" } });
     await new SupabaseProfileStore(client).saveSingleton(
       "user-1",
       "profiles",
       profileSchema.parse({ full_name: "A" }),
     );
-    const [, args] = calls[0]!.ops.find(([op]) => op === "upsert")!;
-    expect(args[1]).toEqual({ onConflict: "user_id" });
-    expect(args[0]).toMatchObject({ user_id: "user-1" });
+    const ops = calls.flatMap((c) => c.ops.map(([op]) => op));
+    expect(ops).toContain("update");
+    expect(ops).not.toContain("upsert");
+    expect(ops).not.toContain("insert");
+    const eq = calls[0]!.ops.find(([op]) => op === "eq")!;
+    expect(eq[1]).toEqual(["user_id", "user-1"]);
+  });
+
+  it("inserts the singleton, owned by the caller, when there is nothing to update", async () => {
+    const calls: [string, unknown[]][] = [];
+    let step = 0;
+    const chain: Record<string, unknown> = {};
+    for (const op of ["select", "eq", "insert", "update"]) {
+      chain[op] = (...args: unknown[]) => {
+        calls.push([op, args]);
+        return chain;
+      };
+    }
+    chain.maybeSingle = () => Promise.resolve({ data: step++ === 0 ? null : null, error: null });
+    chain.single = () => Promise.resolve({ data: { id: "p1", full_name: "A" }, error: null });
+    const client = { from: () => chain } as unknown as SupabaseClient;
+
+    await new SupabaseProfileStore(client).saveSingleton(
+      "user-1",
+      "profiles",
+      profileSchema.parse({ full_name: "A" }),
+    );
+    const insert = calls.find(([op]) => op === "insert")!;
+    expect(insert[1][0]).toMatchObject({ user_id: "user-1", full_name: "A" });
+  });
+
+  it("updates the winning row when a concurrent save created it first", async () => {
+    const calls: string[] = [];
+    let updates = 0;
+    const chain: Record<string, unknown> = {};
+    for (const op of ["select", "eq", "insert", "update"]) {
+      chain[op] = () => {
+        calls.push(op);
+        return chain;
+      };
+    }
+    chain.maybeSingle = () => {
+      updates += 1;
+      return Promise.resolve({
+        data: updates === 1 ? null : { id: "p1", full_name: "A" },
+        error: null,
+      });
+    };
+    chain.single = () =>
+      Promise.resolve({ data: null, error: { code: "23505", message: "duplicate" } });
+    const client = { from: () => chain } as unknown as SupabaseClient;
+
+    const saved = await new SupabaseProfileStore(client).saveSingleton(
+      "user-1",
+      "profiles",
+      profileSchema.parse({ full_name: "A" }),
+    );
+    expect(saved.full_name).toBe("A");
+    expect(calls.filter((c) => c === "update")).toHaveLength(2);
   });
 
   it("maps a unique violation to a duplicate error", async () => {
