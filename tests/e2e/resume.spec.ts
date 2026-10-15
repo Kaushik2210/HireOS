@@ -6,9 +6,9 @@ import { makeDocx, makePdf, pdfWithJavaScript } from "../fixtures/files";
 // the same machine. Each test presents its own address so a full run does not use up the
 // allowance of the next one.
 const test = base.extend({
-  extraHTTPHeaders: async ({}, use) => {
+  extraHTTPHeaders: async ({}, provide) => {
     const octet = () => Math.floor(Math.random() * 254) + 1;
-    await use({ "x-forwarded-for": `10.${octet()}.${octet()}.${octet()}` });
+    await provide({ "x-forwarded-for": `10.${octet()}.${octet()}.${octet()}` });
   },
 });
 
