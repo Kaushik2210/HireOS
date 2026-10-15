@@ -2,6 +2,7 @@
   "name": "hireos",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "An AI operating system for getting hired.",
   "engines": {
     "node": ">=22"

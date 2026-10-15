@@ -141,4 +141,4 @@ supabase/   migrations and seed          tests/      unit, db, e2e, live
 
 Built by **Kaushik** as a portfolio project.
 
-No license has been chosen yet. Until one is added, all rights are reserved.
+Released under the [MIT License](LICENSE).
