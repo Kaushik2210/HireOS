@@ -68,6 +68,15 @@ export async function signInAction(input: unknown, next?: string): Promise<Actio
     return { ok: false, error: "Invalid email or password." };
   }
 
+  // With two-step sign-in on, the password only gets as far as the code screen.
+  const needsCode = (data.user.factors ?? []).some(
+    (f) => f.factor_type === "totp" && f.status === "verified",
+  );
+  if (needsCode) {
+    await recordAudit("auth.mfa_required", data.user.id);
+    redirect(`/login/verify?next=${encodeURIComponent(safeRedirectPath(next))}`);
+  }
+
   await recordAudit("auth.sign_in", data.user.id);
   redirect(safeRedirectPath(next));
 }

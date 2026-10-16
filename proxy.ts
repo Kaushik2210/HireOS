@@ -89,6 +89,8 @@ export async function proxy(request: NextRequest) {
   const pass = () => {
     const headers = new Headers(request.headers);
     headers.set("x-nonce", nonce);
+    // Lets a page that sends someone to the code screen say where to come back to.
+    headers.set("x-current-path", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     headers.set("Content-Security-Policy", csp);
     return NextResponse.next({ request: { headers } });
   };

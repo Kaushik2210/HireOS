@@ -3,8 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DeleteAccountForm } from "@/features/account/components/delete-account-form";
 import { ExportButton } from "@/features/account/components/export-button";
+import { MfaSection } from "@/features/account/components/mfa-section";
 import { signOutEverywhereAction } from "@/features/account/actions";
 import { requireUser } from "@/lib/auth/session";
+import { loadMfaStatus } from "@/services/account/mfa-status";
 import { describeSecurityEvent, loadSecurityEvents } from "@/services/account/security-events";
 
 export const metadata: Metadata = { title: "Privacy & Data" };
@@ -41,6 +43,7 @@ function Section({
 export default async function SettingsPage() {
   const user = await requireUser();
   const events = await loadSecurityEvents(user);
+  const mfa = await loadMfaStatus(user);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -125,9 +128,17 @@ export default async function SettingsPage() {
             <form action={signOutEverywhereAction}>
               <Button type="submit">Sign out everywhere</Button>
             </form>
-            <p className="text-muted">
-              Two-step sign-in <Badge className="ml-1">Planned</Badge>
-            </p>
+          </Section>
+
+          <Section title="Two-step sign-in">
+            {mfa === "unavailable" ? (
+              <p className="text-muted">
+                Two-step sign-in could not be checked right now. If it stays unavailable, turn on
+                authenticator-app (TOTP) sign-in in the Supabase Auth settings.
+              </p>
+            ) : (
+              <MfaSection status={mfa} />
+            )}
           </Section>
 
           <Section title="Delete your account" tone="danger">

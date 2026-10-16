@@ -110,6 +110,45 @@ describe("signInAction", () => {
     expect(recordAudit).toHaveBeenCalledWith("auth.sign_in", "u1");
   });
 
+  it("sends an account with two-step sign-in to the code page, not into the app", async () => {
+    supabase.auth.signInWithPassword.mockResolvedValue({
+      data: { user: { id: "u1", factors: [{ factor_type: "totp", status: "verified" }] } },
+      error: null,
+    });
+    expect(await redirectTarget(actions.signInAction(GOOD, "/jobs?x=1"))).toBe(
+      "/login/verify?next=%2Fjobs%3Fx%3D1",
+    );
+    // The sign-in itself is only recorded once the code has been entered.
+    expect(recordAudit).toHaveBeenCalledWith("auth.mfa_required", "u1");
+    expect(recordAudit).not.toHaveBeenCalledWith("auth.sign_in", "u1");
+  });
+
+  it("does not send an unconfirmed or non-authenticator factor to the code page", async () => {
+    supabase.auth.signInWithPassword.mockResolvedValue({
+      data: {
+        user: {
+          id: "u1",
+          factors: [
+            { factor_type: "totp", status: "unverified" },
+            { factor_type: "phone", status: "verified" },
+          ],
+        },
+      },
+      error: null,
+    });
+    expect(await redirectTarget(actions.signInAction(GOOD, "/jobs"))).toBe("/jobs");
+  });
+
+  it("keeps a hostile next value out of the code page link", async () => {
+    supabase.auth.signInWithPassword.mockResolvedValue({
+      data: { user: { id: "u1", factors: [{ factor_type: "totp", status: "verified" }] } },
+      error: null,
+    });
+    expect(await redirectTarget(actions.signInAction(GOOD, "https://evil.example"))).toBe(
+      "/login/verify?next=%2Fdashboard",
+    );
+  });
+
   it.each(["https://evil.example", "//evil.example", "javascript:alert(1)"])(
     "ignores the hostile next value %s",
     async (next) => {

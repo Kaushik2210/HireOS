@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEMO_COOKIE } from "@/lib/auth/demo";
 
 let supabaseConfigured = true;
-let client: { auth: { getUser: ReturnType<typeof vi.fn> } } | null = null;
+let client: { auth: { getUser: ReturnType<typeof vi.fn>; mfa?: unknown } } | null = null;
 let demoCookie: string | undefined;
 
 class RedirectSignal extends Error {
@@ -12,7 +12,12 @@ class RedirectSignal extends Error {
   }
 }
 
+let currentPath: string | null = null;
+
 vi.mock("next/headers", () => ({
+  headers: async () => ({
+    get: (name: string) => (name === "x-current-path" ? currentPath : null),
+  }),
   cookies: async () => ({
     get: (name: string) =>
       name === DEMO_COOKIE && demoCookie ? { name, value: demoCookie } : undefined,
@@ -26,7 +31,8 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/env", () => ({ getCapabilities: () => ({ supabase: supabaseConfigured }) }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () => client }));
 
-const { getCurrentUser, requireUser } = await import("@/lib/auth/session");
+const { getCurrentUser, getSessionState, requireSecondStepUser, requireUser } =
+  await import("@/lib/auth/session");
 
 const VALID_DEMO_ID = "7b0f6c36-4a52-4f5e-9d4d-0d3f6d1f6a11";
 
@@ -88,5 +94,72 @@ describe("requireUser", () => {
   it("returns the user when signed in", async () => {
     client!.auth.getUser.mockResolvedValue({ data: { user: { id: "u-2", email: null } } });
     await expect(requireUser()).resolves.toMatchObject({ id: "u-2", isDemo: false });
+  });
+});
+
+describe("two-step sign-in", () => {
+  const totp = (status: "verified" | "unverified") => ({ factor_type: "totp", status });
+  const withFactors = (factors: unknown[], currentLevel: "aal1" | "aal2") => {
+    client = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "u-3", email: "m@example.test", factors } },
+          error: null,
+        }),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({ data: { currentLevel } }),
+        },
+      },
+    } as never;
+  };
+
+  it("is not signed in until the code has been entered", async () => {
+    withFactors([totp("verified")], "aal1");
+    expect(await getCurrentUser()).toBeNull();
+    expect((await getSessionState()).kind).toBe("second_step");
+    currentPath = "/reset-password";
+    await expect(requireUser()).rejects.toMatchObject({
+      to: "/login/verify?next=%2Freset-password",
+    });
+    // A path that is not a safe in-app address is dropped, not echoed.
+    currentPath = "//evil.test/x";
+    await expect(requireUser()).rejects.toMatchObject({ to: "/login/verify?next=%2Fdashboard" });
+    currentPath = null;
+    await expect(requireUser()).rejects.toMatchObject({ to: "/login/verify?next=%2Fdashboard" });
+  });
+
+  it("is signed in once the session has been raised by a code", async () => {
+    withFactors([totp("verified")], "aal2");
+    expect(await getCurrentUser()).toMatchObject({ id: "u-3" });
+  });
+
+  it("ignores a setup that was started but never confirmed", async () => {
+    withFactors([totp("unverified")], "aal1");
+    expect(await getCurrentUser()).toMatchObject({ id: "u-3" });
+  });
+
+  it("needs no code when there is no second step at all", async () => {
+    withFactors([], "aal1");
+    const lookup = (
+      client as unknown as {
+        auth: { mfa: { getAuthenticatorAssuranceLevel: ReturnType<typeof vi.fn> } };
+      }
+    ).auth.mfa.getAuthenticatorAssuranceLevel;
+    expect((await getSessionState()).kind).toBe("signed_in");
+    // An account that never turned it on is never asked: the level is not even looked up.
+    expect(lookup).not.toHaveBeenCalled();
+  });
+
+  it("lets only a person who owes a code onto the code page", async () => {
+    withFactors([totp("verified")], "aal1");
+    await expect(requireSecondStepUser()).resolves.toMatchObject({ id: "u-3" });
+
+    withFactors([totp("verified")], "aal2");
+    await expect(requireSecondStepUser()).rejects.toMatchObject({ to: "/dashboard" });
+
+    client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }) },
+    };
+    await expect(requireSecondStepUser()).rejects.toMatchObject({ to: "/login" });
   });
 });

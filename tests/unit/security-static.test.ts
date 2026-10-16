@@ -112,7 +112,7 @@ describe("secrets stay on the server", () => {
 });
 
 describe("server actions", () => {
-  const actionFiles = FILES.filter((f) => /^features\/[^/]+\/actions\.ts$/.test(f));
+  const actionFiles = FILES.filter((f) => /^features\/[^/]+\/[\w-]*actions\.ts$/.test(f));
 
   it("are found", () => {
     expect(actionFiles.length).toBeGreaterThanOrEqual(8);
@@ -139,7 +139,7 @@ describe("server actions", () => {
         const name = /export async function (\w+)/.exec(chunk)![1]!;
         if (PUBLIC_BY_DESIGN.has(name)) continue;
         // Directly, or through a helper in the same file that does.
-        if (!/requireUser\(|loadContext\(|withInterview\(/.test(chunk))
+        if (!/requireUser\(|requireSecondStepUser\(|loadContext\(|withInterview\(/.test(chunk))
           gaps.push(`${file}: ${name}`);
       }
     }

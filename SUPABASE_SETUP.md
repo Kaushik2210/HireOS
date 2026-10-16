@@ -69,6 +69,10 @@ In **Authentication**:
 - **Passwords**: raise the minimum length to match HireOS (10 or more, the same as HireOS). If your plan offers
   **Leaked password protection**, turn it on.
 
+## Optional: two-step sign-in
+
+To let people turn on two-step sign-in, enable authenticator-app (TOTP) in **Authentication, Sign In / Providers, Multi-Factor**. Without it the Privacy & Data page says the feature is unavailable. The local stack started from this repository already has it on (`supabase/config.toml`).
+
 ## 5. Optional: sample jobs
 
 The shared demo job board (41 fictional jobs) is `supabase/seed.sql`. Without it, a real account
