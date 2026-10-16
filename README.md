@@ -7,6 +7,8 @@ employer, a recruiter or LinkedIn on your behalf.
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
+**Live demo:** https://hireos-beryl.vercel.app (demo mode: a fictional candidate and sample jobs; nothing you do there is stored beyond a temporary sandbox).
+
 > **Status.** All fifteen build phases are done. It runs with no keys in a clearly labelled
 > demo mode (a fictional candidate and 41 fictional jobs), and against a real Supabase project
 > when you add keys. There is **no AI model in the loop yet**: scoring, tailoring, drafting and
@@ -134,6 +136,7 @@ supabase/   migrations and seed          tests/      unit, db, e2e, live
 - **Supabase is verified locally, not on a hosted project.** A live suite runs every store as
   two real accounts against a local Supabase stack and passes. Email confirmation and password
   reset, and anything on a hosted project, have not been exercised.
+- **The hosted demo keeps each visitor's sandbox in server memory.** It is deployed on serverless hosting with no database, so your edits last only while the server instance that holds them stays alive; a restart or a request served by another instance can reset them. It is for looking around, not for keeping data. Run it with Supabase to keep your own.
 - **Not built:** two-step sign-in, OAuth providers, email delivery, background workers, PDF or
   DOCX export, and the Career Autopilot. The full list is in [ROADMAP.md](ROADMAP.md).
 

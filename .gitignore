@@ -42,3 +42,5 @@ Thumbs.db
 # local tool state
 .claude/settings.local.json
 AGENTS.md
+
+.vercel
