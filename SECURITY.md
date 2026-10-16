@@ -32,7 +32,7 @@ Resumes are sensitive PII. Security is a feature, designed in from phase 1.
 - Per-IP and per-email rate limits on sign-in, sign-up and reset (shared across instances since Phase 13).
 - Audit events for sign-in, failure, sign-up, sign-out, reset request and password change, with no emails or credentials, in an append-only table.
 - A backend outage is reported as unavailable, not as bad credentials.
-- Added in Phase 13: CSP and security headers, sign out everywhere, account deletion. Still Planned: two-step sign-in (MFA).
+- Added in Phase 13: CSP and security headers, sign out everywhere, account deletion. Two-step sign-in was added afterwards (see below).
 
 ## Implemented in Phase 3 (profile)
 - RLS on all eight profile tables with two-user isolation tests; least-privilege column grants.
@@ -128,6 +128,17 @@ Known limits: parsing runs in the request process (bounded, but a pathological f
 - **Dependencies.** `npm audit --omit=dev` reports no vulnerabilities.
 
 Known limits: the client address comes from `X-Forwarded-For`, which is only trustworthy behind a proxy that sets it (hosted platforms do), so per-address limits can be dodged by someone reaching the server directly; per-email limits still apply. Two-step sign-in, a recent-sign-in check before deletion, email notices for security events and a scanner for uploaded files are not built. Counters are fixed windows, so a burst at a window edge can briefly double the allowance. The Supabase Auth settings that matter (confirm email, leaked-password protection, redirect allow-list) are dashboard settings the app can only document, not enforce.
+
+## Two-step sign-in
+- **What it is.** An optional authenticator-app (TOTP) code after the password, built on Supabase MFA. Set up from Privacy & Data: scan a picture or type the key, then enter the first code to confirm. Turning it off needs a current code.
+- **Where it is enforced.** Everywhere the app resolves a person (`getSessionState` in `lib/auth/session.ts`): pages, server actions and API routes alike. An account with a confirmed factor whose session is still at the first assurance level is "second step": every page sends it to the code screen, actions and routes treat it as signed out, and only the code page and sign-out work. The page it was heading for (a password-reset link, say) is carried through the code screen; the proxy sets that path itself, so a request cannot choose it.
+- **Guessing.** Eight code attempts per account per fifteen minutes, shared across instances. Wrong codes are audited, without the code.
+- **Verified against the real service.** The live suite (`tests/live/mfa.live.test.ts`, run in CI on a local Supabase stack) enrols an authenticator, checks that the sign-in response and a fresh read both carry the factor, that a password alone gives only the first level, that a wrong code does not raise the session and a right one does, and that only a raised session can remove the factor.
+- **Limits.**
+  - **There are no recovery codes.** If someone loses both the device and the setup key, HireOS cannot restore access; the factor has to be removed by whoever runs the Supabase project. The setup screen says so.
+  - **It is enforced by the app, not by the database.** Row Level Security does not require the second level, so someone who already has the password could ask Supabase directly (with the public key and a first-level token) for the rows their account may read. Closing that means adding `aal2` conditions to every policy for accounts that have a factor, which is not done.
+  - Authenticator (TOTP) only: no SMS, passkeys or hardware keys.
+  - A hosted project needs TOTP turned on in its Auth settings; the local config in the repository already has it.
 
 ## User data controls
 View, edit, export (JSON), delete resume/profile/applications, wipe demo data, delete account (cascade + storage purge). All built; see Privacy & Data above.
