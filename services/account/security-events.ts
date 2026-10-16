@@ -14,6 +14,10 @@ const LABELS: Record<string, string> = {
   "auth.sign_out_all": "Signed out of every device",
   "auth.password_reset_requested": "Password reset requested",
   "auth.password_updated": "Password changed",
+  "auth.mfa_required": "Password accepted, code requested",
+  "auth.mfa_failed": "Wrong two-step code",
+  "account.mfa_enabled": "Two-step sign-in turned on",
+  "account.mfa_disabled": "Two-step sign-in turned off",
   "account.exported": "Data export downloaded",
 };
 

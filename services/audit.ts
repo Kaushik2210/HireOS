@@ -8,6 +8,10 @@ export type AuditAction =
   | "auth.password_reset_requested"
   | "auth.password_updated"
   | "auth.sign_out_all"
+  | "auth.mfa_required"
+  | "auth.mfa_failed"
+  | "account.mfa_enabled"
+  | "account.mfa_disabled"
   | "account.exported"
   | "account.deleted";
 

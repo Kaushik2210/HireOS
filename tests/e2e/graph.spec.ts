@@ -113,9 +113,14 @@ test.describe("career graph", () => {
     await page.goto("/graph");
     const svg = page.getByTestId("graph-svg");
     const base = (await svg.boundingBox())!.width;
-    await page.getByRole("button", { name: "Zoom in" }).click();
-    await page.getByRole("button", { name: "Zoom in" }).click();
-    await expect.poll(async () => (await svg.boundingBox())!.width).toBeGreaterThan(base * 1.5);
+    // Clicks made before the page has hydrated do nothing, so repeat until the view changes.
+    await expect(async () => {
+      await page.getByRole("button", { name: "Zoom in" }).click();
+      await page.getByRole("button", { name: "Zoom in" }).click();
+      await expect
+        .poll(async () => (await svg.boundingBox())!.width, { timeout: 2000 })
+        .toBeGreaterThan(base * 1.5);
+    }).toPass({ timeout: 20_000 });
     await page.getByRole("button", { name: "Reset view" }).click();
     await expect.poll(async () => (await svg.boundingBox())!.width).toBeLessThan(base * 1.1);
     await expect(page.getByRole("button", { name: "Zoom out" })).toBeDisabled();

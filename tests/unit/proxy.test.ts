@@ -123,3 +123,14 @@ describe("proxy security policy", () => {
     expect(await nonce()).not.toBe(await nonce());
   });
 });
+
+describe("proxy request context", () => {
+  it("hands the page the path it is rendering, and a caller cannot choose it", async () => {
+    signedIn();
+    const forged = new NextRequest("http://localhost:3000/jobs?q=1", {
+      headers: { "x-current-path": "/evil" },
+    });
+    const res = await proxy(forged);
+    expect(res.headers.get("x-middleware-request-x-current-path")).toBe("/jobs?q=1");
+  });
+});

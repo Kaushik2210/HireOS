@@ -179,3 +179,11 @@ test("the privacy page is protected, and the export refuses a signed-out request
   expect(res.status()).toBe(401);
   expect(res.headers()["cache-control"]).toBe("no-store");
 });
+
+test("the code page is for people who have passed the password step, not for visitors", async ({
+  page,
+}) => {
+  await page.goto("/login/verify");
+  await expect(page).toHaveURL(/\/login\?next=%2Flogin%2Fverify$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+});
