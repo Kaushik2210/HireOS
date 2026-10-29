@@ -112,18 +112,23 @@ test.describe("career graph", () => {
   test("zooms in and resets", async ({ page }) => {
     await page.goto("/graph");
     const svg = page.getByTestId("graph-svg");
-    const base = (await svg.boundingBox())!.width;
+    await expect(svg).toBeVisible();
+    const width = async () => (await svg.boundingBox())?.width ?? 0;
+
     // Clicks made before the page has hydrated do nothing, so repeat until the view changes.
+    // The starting width is read afresh each time, since layout can settle after hydration.
+    let base = 0;
     await expect(async () => {
+      await expect(svg).toBeVisible();
+      base = await width();
       await page.getByRole("button", { name: "Zoom in" }).click();
       await page.getByRole("button", { name: "Zoom in" }).click();
-      await expect
-        .poll(async () => (await svg.boundingBox())!.width, { timeout: 2000 })
-        .toBeGreaterThan(base * 1.5);
+      await expect.poll(width, { timeout: 2000 }).toBeGreaterThan(base * 1.5);
     }).toPass({ timeout: 20_000 });
+
     await page.getByRole("button", { name: "Reset view" }).click();
-    await expect.poll(async () => (await svg.boundingBox())!.width).toBeLessThan(base * 1.1);
     await expect(page.getByRole("button", { name: "Zoom out" })).toBeDisabled();
+    await expect.poll(width).toBeLessThan(base * 1.1);
   });
 
   test("offers the same information as a plain list", async ({ page }) => {
