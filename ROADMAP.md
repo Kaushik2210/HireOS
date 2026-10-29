@@ -36,7 +36,7 @@ Browser extension for user-initiated page capture, calendar integration for inte
 - `npm audit` reports 8 advisories, all in the dev-only Vitest toolchain (none in production dependencies; CI gates on `npm audit --omit=dev`). Upgrading Vitest is blocked by peer-dependency conflicts; revisit when the ecosystem catches up.
 - Migrations are verified on PGlite in the test suite and, by hand, on a local Supabase stack (`npx supabase start`). A CI job running `supabase start` and `supabase db reset` is planned.
 - Rate limits are shared through the database when the service role key is set, and fall back to per-instance memory otherwise or when the database is unreachable. The client address is read from `X-Forwarded-For`, so per-address limits are only as trustworthy as the proxy in front of the app.
-- OAuth providers are Planned. Two-step sign-in (authenticator app) is built, with no recovery codes and enforced by the app rather than by Row Level Security (see SECURITY.md). Account deletion is built and does not ask for the password again.
+- OAuth providers are Planned. Two-step sign-in (authenticator app) is built, with no recovery codes; it is enforced both by the app and, since migration 16, by the database (see SECURITY.md). Account deletion is built and does not ask for the password again.
 - The Content Security Policy allows inline style attributes (`style-src-attr 'unsafe-inline'`); removing that means replacing the few inline widths with classes or CSS variables set another way.
 - Demo sandboxes live in server memory: they reset on restart and are not shared across serverless instances.
 - Profile items have no import path yet; resume parsing (Phase 4) will create unconfirmed items, and a confirm-all UI lands with it.

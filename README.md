@@ -79,7 +79,7 @@ wherever it applies.
 HireOS uses Supabase for accounts, the database and private file storage. The step-by-step
 guide, including a local Docker route that needs no cloud account, is in
 [SUPABASE_SETUP.md](SUPABASE_SETUP.md). In short: create a project, put the three keys in
-`.env.local`, apply the 15 migrations, then `npm run supabase:check`.
+`.env.local`, apply the 16 migrations, then `npm run supabase:check`.
 
 ## Commands
 
