@@ -138,47 +138,6 @@ export default async function DashboardPage() {
       </section>
 
       <section
-        aria-labelledby="system-status"
-        className="border-border bg-surface rounded-lg border p-4"
-      >
-        <h2 id="system-status" className="text-sm font-medium">
-          System status
-        </h2>
-        <ul className="divide-border mt-2 divide-y">
-          <StatusRow
-            label="Data backend (Supabase)"
-            ok={caps.supabase}
-            okText="Configured"
-            offText="Not configured"
-          />
-          <StatusRow
-            label="AI backend (LLM provider)"
-            ok={caps.llm}
-            okText="Configured"
-            offText="Configure API key"
-          />
-          <StatusRow
-            label="Background jobs (Inngest)"
-            ok={caps.backgroundJobs}
-            okText="Configured"
-            offText="Not configured"
-          />
-          <StatusRow
-            label="Email drafts delivery (Resend)"
-            ok={caps.email}
-            okText="Configured"
-            offText="Not configured"
-          />
-        </ul>
-        {caps.demoMode && (
-          <p className="text-muted mt-3 text-xs">
-            Running without a data backend, so what you see is sample data in a temporary sandbox.
-            Add Supabase keys to keep your own data; AI features stay off until an API key is set.
-          </p>
-        )}
-      </section>
-
-      <section
         aria-labelledby="top-opportunities"
         className="border-border bg-surface rounded-lg border p-4"
       >
@@ -263,6 +222,47 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
+
+      <section
+        aria-labelledby="system-status"
+        className="border-border bg-surface rounded-lg border p-4"
+      >
+        <h2 id="system-status" className="text-sm font-medium">
+          System status
+        </h2>
+        <ul className="divide-border mt-2 divide-y">
+          <StatusRow
+            label="Data backend (Supabase)"
+            ok={caps.supabase}
+            okText="Configured"
+            offText="Not configured"
+          />
+          <StatusRow
+            label="AI backend (LLM provider)"
+            ok={caps.llm}
+            okText="Configured"
+            offText="Configure API key"
+          />
+          <StatusRow
+            label="Background jobs (Inngest)"
+            ok={caps.backgroundJobs}
+            okText="Configured"
+            offText="Not configured"
+          />
+          <StatusRow
+            label="Email drafts delivery (Resend)"
+            ok={caps.email}
+            okText="Configured"
+            offText="Not configured"
+          />
+        </ul>
+        {caps.demoMode && (
+          <p className="text-muted mt-3 text-xs">
+            Running without a data backend, so what you see is sample data in a temporary sandbox.
+            Add Supabase keys to keep your own data; AI features stay off until an API key is set.
+          </p>
+        )}
+      </section>
     </div>
   );
 }

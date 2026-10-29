@@ -59,7 +59,11 @@ function Card({
   );
 }
 
-/** One column per status, side by side. On a narrow screen the board scrolls sideways within itself. */
+/**
+ * One column per status, in pipeline order, wrapping onto rows. Every stage is visible without
+ * scrolling sideways (a long row hid the later stages, interview and offer, off-screen), and on
+ * a phone the columns stack.
+ */
 export function Board({
   applications,
   followUps,
@@ -70,22 +74,17 @@ export function Board({
   now: Date;
 }) {
   return (
-    // `relative` makes this the containing block for the screen-reader-only labels inside, so
-    // they are clipped with the board instead of widening the whole page.
-    <div
-      className="relative -mx-4 overflow-x-auto px-4 pb-2"
-      role="region"
-      aria-label="Pipeline board"
-      tabIndex={0}
-    >
-      <div className="flex min-w-max gap-3">
+    // `relative` keeps the screen-reader-only labels inside the board, so they can never widen
+    // the page.
+    <div className="relative" role="region" aria-label="Pipeline board">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {STATUSES.map((status) => {
           const items = applications.filter((a) => a.status === status);
           return (
             <section
               key={status}
               aria-labelledby={`col-${status}`}
-              className="border-border bg-surface flex w-64 shrink-0 flex-col gap-3 rounded-lg border p-3"
+              className="border-border bg-surface flex min-w-0 flex-col gap-3 rounded-lg border p-3"
               data-testid={`column-${status}`}
             >
               <h3
