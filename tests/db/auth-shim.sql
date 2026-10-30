@@ -68,3 +68,22 @@ grant usage on schema storage to anon, authenticated, service_role;
 grant select, insert, update, delete on storage.objects to anon, authenticated, service_role;
 grant select on storage.buckets to anon, authenticated, service_role;
 grant execute on function storage.foldername(text) to anon, authenticated, service_role;
+
+-- Two-step sign-in support: the claims an API request carries, and the table of enrolled
+-- authenticators. On Supabase both exist already (auth.jwt() and auth.mfa_factors).
+create function auth.jwt()
+returns jsonb
+language sql
+stable
+as $$
+  select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb
+$$;
+
+grant execute on function auth.jwt() to anon, authenticated, service_role;
+
+create table auth.mfa_factors (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  factor_type text not null,
+  status text not null
+);

@@ -39,14 +39,20 @@ export async function as<T>(
   role: Role,
   userId: string | null,
   fn: () => Promise<T>,
+  /** The assurance level the session's token carries. A password alone gives aal1. */
+  options: { aal?: "aal1" | "aal2" } = {},
 ): Promise<T> {
   await db.query("select set_config('request.jwt.claim.sub', $1, false)", [userId ?? ""]);
+  await db.query("select set_config('request.jwt.claims', $1, false)", [
+    JSON.stringify({ aal: options.aal ?? "aal1" }),
+  ]);
   await db.exec(`set role ${role}`);
   try {
     return await fn();
   } finally {
     await db.exec("reset role");
     await db.query("select set_config('request.jwt.claim.sub', '', false)");
+    await db.query("select set_config('request.jwt.claims', '', false)");
   }
 }
 

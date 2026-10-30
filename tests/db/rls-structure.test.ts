@@ -148,6 +148,7 @@ describe("every function in public", () => {
       "owns_document_version",
       "change_application_status",
       "add_application_event",
+      "second_step_satisfied",
       "search_jobs",
     ]);
     const exposed = (await functions())

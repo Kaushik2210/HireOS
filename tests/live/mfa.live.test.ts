@@ -99,6 +99,16 @@ suite(`live two-step sign-in (${URL || "not configured"})`, () => {
     const level = await client.auth.mfa.getAuthenticatorAssuranceLevel();
     expect(level.data?.currentLevel).toBe("aal1");
     expect(level.data?.nextLevel).toBe("aal2");
+
+    // The database itself refuses a first-level token: asking Supabase directly, as someone
+    // who only has the password would, returns nothing and writes nothing.
+    const mine = await client.from("users").select("id");
+    expect(mine.error).toBeNull();
+    expect(mine.data).toEqual([]);
+    const write = await client.from("profiles").insert({ user_id: user.id, full_name: "X" });
+    expect(write.error).not.toBeNull();
+    const files = await client.storage.from("resumes").list(user.id);
+    expect(files.data ?? []).toEqual([]);
   });
 
   it("a wrong code does not raise the session; the right one does", async () => {
@@ -116,6 +126,12 @@ suite(`live two-step sign-in (${URL || "not configured"})`, () => {
     expect((await client.auth.mfa.getAuthenticatorAssuranceLevel()).data?.currentLevel).toBe(
       "aal2",
     );
+
+    // ...and only then does the database give the account its own rows back.
+    const mine = await client.from("users").select("id");
+    expect(mine.data).toHaveLength(1);
+    const write = await client.from("profiles").insert({ user_id: user.id, full_name: "Gated" });
+    expect(write.error).toBeNull();
   });
 
   it("only a raised session can turn it off", async () => {

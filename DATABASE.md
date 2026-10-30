@@ -159,3 +159,6 @@ No new tables. The graph is built on read from the verified profile items, track
 
 ## Function privileges (Phase 14)
 Postgres grants `execute` on new functions to everyone by default. `search_jobs` had been left open to the anonymous role (harmless, since it runs with the caller's rights and the tables behind it are closed, but untidy); migration 15 revokes that and makes "no one until granted" the default for functions created from now on. A schema-wide test (`tests/db/rls-structure.test.ts`) checks that every table is closed or fully policed, that no write policy is simply true, and that no function is callable by the anonymous role.
+
+## Two-step gate (migration 16)
+`second_step_satisfied()` is `security definer` with a pinned search path, executable by signed-in users and the service role. It is true when the request's token carries `aal2`, or when the user has no confirmed authenticator in `auth.mfa_factors` (an unconfirmed setup or another kind of factor does not count). A RESTRICTIVE policy named `two_step_gate` on every table holding a person's data, and `resumes_two_step_gate` on `storage.objects` for the resumes bucket, requires it. Shared reference data (`job_sources`, `companies`, `application_transitions`) is left alone. The test shim provides `auth.jwt()` and `auth.mfa_factors`, which Supabase already has.
